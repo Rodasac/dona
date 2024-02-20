@@ -1,0 +1,33 @@
+[workspace]
+members = [ "contexts/backoffice", "contexts/dona_context", "contexts/shared"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+authors = ["Adolfo Bastardo <contact@adolfo.co.ve>"]
+description = "Dona is a service to manage personal donations."
+license = "AGPL-3.0"
+
+[package]
+name = "dona"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description.workspace = true
+license.workspace = true
+authors.workspace = true
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.dependencies]
+async-trait = "0.1.77"
+rust_decimal = "1.34"
+rust_decimal_macros = "1.34"
+serde = {version = "1.0.197", features = ["derive"]}
+serde_json = "1.0.114"
+time = {version = "0.3.34", features = ["serde-human-readable", "rand"]}
+tokio = {version = "1.36.0", features = ["full"]}
+
+[dependencies]
