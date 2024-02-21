@@ -1,10 +1,41 @@
-use std::{any::Any, error::Error, fmt::Display, sync::Arc};
+use std::{any::Any, error::Error, fmt::Display, hash::Hash, sync::Arc};
 
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 pub trait Event: Send + Sync {
     fn event_type(&self) -> &'static str;
     fn as_any(&self) -> &dyn Any;
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BaseEvent {
+    event_id: String,
+    aggregate_id: String,
+    occurred_at: OffsetDateTime,
+}
+
+impl BaseEvent {
+    pub fn new(aggregate_id: String) -> Self {
+        Self {
+            event_id: Uuid::now_v7().to_string(),
+            aggregate_id,
+            occurred_at: OffsetDateTime::now_utc(),
+        }
+    }
+
+    pub fn event_id(&self) -> &str {
+        &self.event_id
+    }
+
+    pub fn aggregate_id(&self) -> &str {
+        &self.aggregate_id
+    }
+
+    pub fn occurred_at(&self) -> OffsetDateTime {
+        self.occurred_at
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -9,3 +9,14 @@ authors.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+argon2.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+time.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+shared = { path = "../shared" }
+
+[dev-dependencies]
+mockall.workspace = true
