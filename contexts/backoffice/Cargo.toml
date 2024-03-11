@@ -19,4 +19,5 @@ uuid.workspace = true
 shared = { path = "../shared" }
 
 [dev-dependencies]
+fake.workspace = true
 mockall.workspace = true

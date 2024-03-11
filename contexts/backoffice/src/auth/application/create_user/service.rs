@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::auth::domain::{
-    password_hasher::UserPasswordHasher, user::User, user_repository::UserRepository,
+    password_hasher::UserPasswordHasher,
+    user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
+    user_repository::UserRepository,
 };
 
 #[derive(Clone)]
@@ -23,18 +25,20 @@ impl CreateUser {
 
     pub async fn execute(
         &self,
-        id: String,
-        email: String,
-        password: String,
-        full_name: String,
-        created_at: String,
-        updated_at: String,
+        id: UserId,
+        email: UserEmail,
+        password: UserPassword,
+        full_name: UserFullName,
+        created_at: UserCreatedAt,
+        updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
         let hashed_password = self
             .password_hasher
-            .hash(&password)
+            .hash(&password.to_string())
+            .map(|hashed_password| UserPassword::new(hashed_password).unwrap())
             .map_err(|e| e.to_string())?;
-        let user = User::new(
+
+        let user = User::new_user(
             id,
             email,
             hashed_password,
@@ -61,6 +65,10 @@ mod tests {
 
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
+    use crate::auth::domain::user::tests::{
+        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserPasswordMother,
+        UserUpdatedAtMother,
+    };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
     #[tokio::test]
@@ -82,12 +90,12 @@ mod tests {
 
         let result = create_user
             .execute(
-                "018dc9d0-ef64-7c4c-9317-4574f06a5250".to_string(),
-                "test@test.com".to_string(),
-                "password".to_string(),
-                "Test Name".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
+                UserIdMother::random(),
+                UserEmailMother::random(),
+                UserPasswordMother::create("password".to_string()),
+                UserFullNameMother::random(),
+                UserCreatedAtMother::random(),
+                UserUpdatedAtMother::random(),
             )
             .await;
 
@@ -113,12 +121,12 @@ mod tests {
 
         let result = create_user
             .execute(
-                "018dc9d0-ef64-7c4c-9317-4574f06a5250".to_string(),
-                "test@test.com".to_string(),
-                "password".to_string(),
-                "Test Name".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
+                UserIdMother::random(),
+                UserEmailMother::random(),
+                UserPasswordMother::create("password".to_string()),
+                UserFullNameMother::random(),
+                UserCreatedAtMother::random(),
+                UserUpdatedAtMother::random(),
             )
             .await;
 
@@ -141,12 +149,12 @@ mod tests {
 
         let result = create_user
             .execute(
-                "018dc9d0-ef64-7c4c-9317-4574f06a5250".to_string(),
-                "test@test.com".to_string(),
-                "password".to_string(),
-                "Test Name".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
-                "2024-02-21T00:00:00+04:00".to_string(),
+                UserIdMother::random(),
+                UserEmailMother::random(),
+                UserPasswordMother::create("password".to_string()),
+                UserFullNameMother::random(),
+                UserCreatedAtMother::random(),
+                UserUpdatedAtMother::random(),
             )
             .await;
 

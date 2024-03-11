@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use shared::common::domain::bus::event::{BaseEvent, Event};
-use time::OffsetDateTime;
 
 pub const USER_CREATED_EVENT_TYPE: &str = "user_created";
 
@@ -10,8 +9,8 @@ pub struct UserCreatedEvent {
     email: String,
     password: String,
     full_name: String,
-    created_at: OffsetDateTime,
-    updated_at: OffsetDateTime,
+    created_at: String,
+    updated_at: String,
 
     base_event: BaseEvent,
 }
@@ -22,8 +21,8 @@ impl UserCreatedEvent {
         email: String,
         password: String,
         full_name: String,
-        created_at: OffsetDateTime,
-        updated_at: OffsetDateTime,
+        created_at: String,
+        updated_at: String,
     ) -> Self {
         Self {
             id: id.clone(),
@@ -52,12 +51,12 @@ impl UserCreatedEvent {
         &self.full_name
     }
 
-    pub fn created_at(&self) -> OffsetDateTime {
-        self.created_at
+    pub fn created_at(&self) -> &str {
+        &self.created_at
     }
 
-    pub fn updated_at(&self) -> OffsetDateTime {
-        self.updated_at
+    pub fn updated_at(&self) -> &str {
+        &self.updated_at
     }
 }
 

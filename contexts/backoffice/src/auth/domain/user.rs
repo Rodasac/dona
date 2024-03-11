@@ -88,14 +88,48 @@ impl Display for UserFullName {
     }
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserCreatedAt(OffsetDateTime);
+
+impl UserCreatedAt {
+    pub fn new(value: String) -> Result<Self, String> {
+        Ok(UserCreatedAt(
+            OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
+        ))
+    }
+}
+
+impl Display for UserCreatedAt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserUpdatedAt(OffsetDateTime);
+
+impl UserUpdatedAt {
+    pub fn new(value: String) -> Result<Self, String> {
+        Ok(UserUpdatedAt(
+            OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
+        ))
+    }
+}
+
+impl Display for UserUpdatedAt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Clone)]
 pub struct User {
     id: UserId,
     email: UserEmail,
     password: UserPassword,
     full_name: UserFullName,
-    created_at: OffsetDateTime,
-    updated_at: OffsetDateTime,
+    created_at: UserCreatedAt,
+    updated_at: UserUpdatedAt,
 
     events: Vec<Arc<dyn Event>>,
 }
@@ -111,23 +145,14 @@ impl Display for User {
 }
 
 impl User {
-    pub fn new(
-        id: String,
-        email: String,
-        password: String,
-        full_name: String,
-        created_at: String,
-        updated_at: String,
+    pub fn new_user(
+        id: UserId,
+        email: UserEmail,
+        password: UserPassword,
+        full_name: UserFullName,
+        created_at: UserCreatedAt,
+        updated_at: UserUpdatedAt,
     ) -> Result<User, String> {
-        let id = UserId::new(id)?;
-        let email = UserEmail::new(email)?;
-        let password = UserPassword::new(password)?;
-        let full_name = UserFullName::new(full_name)?;
-        let created_at =
-            OffsetDateTime::parse(&created_at, &Iso8601::DEFAULT).map_err(|e| e.to_string())?;
-        let updated_at =
-            OffsetDateTime::parse(&updated_at, &Iso8601::DEFAULT).map_err(|e| e.to_string())?;
-
         let mut user = User {
             id,
             email,
@@ -143,8 +168,8 @@ impl User {
             user.email.to_string(),
             user.password.to_string(),
             user.full_name.to_string(),
-            user.created_at,
-            user.updated_at,
+            user.created_at.to_string(),
+            user.updated_at.to_string(),
         )));
 
         Ok(user)
@@ -176,11 +201,128 @@ impl User {
         &self.full_name
     }
 
-    pub fn created_at(&self) -> &OffsetDateTime {
+    pub fn created_at(&self) -> &UserCreatedAt {
         &self.created_at
     }
 
-    pub fn updated_at(&self) -> &OffsetDateTime {
+    pub fn updated_at(&self) -> &UserUpdatedAt {
         &self.updated_at
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    use fake::{
+        faker::{internet::en::SafeEmail, name::en::Name, time::en::DateTimeAfter},
+        Fake, Faker,
+    };
+    use shared::common::domain::utils::MINIMUM_DATE_PERMITTED;
+
+    pub struct UserIdMother;
+
+    impl UserIdMother {
+        pub fn create(value: String) -> UserId {
+            UserId::new(value).unwrap()
+        }
+
+        pub fn random() -> UserId {
+            UserId::new(Uuid::now_v7().to_string()).unwrap()
+        }
+    }
+
+    pub struct UserEmailMother;
+
+    impl UserEmailMother {
+        pub fn create(value: String) -> UserEmail {
+            UserEmail::new(value).unwrap()
+        }
+
+        pub fn random() -> UserEmail {
+            UserEmail::new(SafeEmail().fake::<String>()).unwrap()
+        }
+    }
+
+    pub struct UserPasswordMother;
+
+    impl UserPasswordMother {
+        pub fn create(value: String) -> UserPassword {
+            UserPassword::new(value).unwrap()
+        }
+
+        pub fn random() -> UserPassword {
+            UserPassword::new(Faker.fake::<String>()).unwrap()
+        }
+    }
+
+    pub struct UserFullNameMother;
+
+    impl UserFullNameMother {
+        pub fn create(value: String) -> UserFullName {
+            UserFullName::new(value).unwrap()
+        }
+
+        pub fn random() -> UserFullName {
+            UserFullName::new(Name().fake::<String>()).unwrap()
+        }
+    }
+
+    pub struct UserCreatedAtMother;
+
+    impl UserCreatedAtMother {
+        pub fn create(value: String) -> UserCreatedAt {
+            UserCreatedAt::new(value).unwrap()
+        }
+
+        pub fn random() -> UserCreatedAt {
+            UserCreatedAt::new(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake::<String>()).unwrap()
+        }
+    }
+
+    pub struct UserUpdatedAtMother;
+
+    impl UserUpdatedAtMother {
+        pub fn create(value: String) -> UserUpdatedAt {
+            UserUpdatedAt::new(value).unwrap()
+        }
+
+        pub fn random_after(created_at: &UserCreatedAt) -> UserUpdatedAt {
+            let updated_at: OffsetDateTime = DateTimeAfter(created_at.0).fake();
+            UserUpdatedAt::new(updated_at.format(&Iso8601::DEFAULT).unwrap()).unwrap()
+        }
+
+        pub fn random() -> UserUpdatedAt {
+            UserUpdatedAt::new(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake::<String>()).unwrap()
+        }
+    }
+
+    pub struct UserMother;
+
+    impl UserMother {
+        pub fn create(
+            id: UserId,
+            email: UserEmail,
+            password: UserPassword,
+            full_name: UserFullName,
+            created_at: UserCreatedAt,
+            updated_at: UserUpdatedAt,
+        ) -> User {
+            User::new_user(id, email, password, full_name, created_at, updated_at).unwrap()
+        }
+
+        pub fn random() -> User {
+            let created_at = UserCreatedAtMother::random();
+            let updated_at = UserUpdatedAtMother::random_after(&created_at);
+            User::new_user(
+                UserId::new(Uuid::now_v7().to_string()).unwrap(),
+                UserEmail::new(Faker.fake::<String>()).unwrap(),
+                UserPassword::new(Faker.fake::<String>()).unwrap(),
+                UserFullName::new(Faker.fake::<String>()).unwrap(),
+                created_at,
+                updated_at,
+            )
+            .unwrap()
+        }
     }
 }

@@ -1,7 +1,7 @@
 use std::{any::Any, error::Error, fmt::Display, hash::Hash, sync::Arc};
 
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{format_description::well_known::Iso8601, OffsetDateTime};
 use uuid::Uuid;
 
 pub trait Event: Send + Sync {
@@ -13,7 +13,7 @@ pub trait Event: Send + Sync {
 pub struct BaseEvent {
     event_id: String,
     aggregate_id: String,
-    occurred_at: OffsetDateTime,
+    occurred_at: String,
 }
 
 impl BaseEvent {
@@ -21,7 +21,7 @@ impl BaseEvent {
         Self {
             event_id: Uuid::now_v7().to_string(),
             aggregate_id,
-            occurred_at: OffsetDateTime::now_utc(),
+            occurred_at: OffsetDateTime::now_utc().format(&Iso8601::DEFAULT).unwrap(),
         }
     }
 
@@ -33,8 +33,8 @@ impl BaseEvent {
         &self.aggregate_id
     }
 
-    pub fn occurred_at(&self) -> OffsetDateTime {
-        self.occurred_at
+    pub fn occurred_at(&self) -> &str {
+        &self.occurred_at
     }
 }
 
