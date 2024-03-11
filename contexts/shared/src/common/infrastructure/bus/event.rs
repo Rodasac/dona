@@ -47,6 +47,8 @@ impl EventBus for InMemoryEventBus {
 
 #[cfg(test)]
 mod tests {
+    use crate::common::domain::bus::event::{EventDeserializeError, EventSerialized};
+
     use super::*;
 
     #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +61,17 @@ mod tests {
 
         fn as_any(&self) -> &dyn std::any::Any {
             self
+        }
+
+        fn from_primitives(
+            &self,
+            _primitives: EventSerialized,
+        ) -> Result<Box<dyn Event>, EventDeserializeError> {
+            Ok(Box::new(TestEvent))
+        }
+
+        fn to_primitives(&self) -> EventSerialized {
+            EventSerialized::default()
         }
     }
 

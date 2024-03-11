@@ -1,9 +1,10 @@
-use serde::{Deserialize, Serialize};
-use shared::common::domain::bus::event::{BaseEvent, Event};
+use shared::common::domain::bus::event::{
+    BaseEvent, Event, EventDeserializeError, EventSerialized,
+};
 
 pub const USER_CREATED_EVENT_TYPE: &str = "user_created";
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserCreatedEvent {
     id: String,
     email: String,
@@ -67,5 +68,68 @@ impl Event for UserCreatedEvent {
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn to_primitives(&self) -> EventSerialized {
+        EventSerialized::new(
+            self.base_event.event_id().to_string(),
+            self.base_event.aggregate_id().to_string(),
+            self.base_event.occurred_at().to_string(),
+            vec![
+                ("id".to_string(), self.id.clone()),
+                ("email".to_string(), self.email.clone()),
+                ("password".to_string(), self.password.clone()),
+                ("full_name".to_string(), self.full_name.clone()),
+                ("created_at".to_string(), self.created_at.clone()),
+                ("updated_at".to_string(), self.updated_at.clone()),
+            ]
+            .into_iter()
+            .collect(),
+        )
+    }
+
+    fn from_primitives(
+        &self,
+        primitives: EventSerialized,
+    ) -> Result<Box<dyn Event>, EventDeserializeError> {
+        let data = primitives.data();
+        let base_event = BaseEvent::from_primitives(
+            primitives.event_id().to_string(),
+            primitives.aggregate_id().to_string(),
+            primitives.occurred_at().to_string(),
+        );
+
+        let id = data
+            .get("id")
+            .ok_or(EventDeserializeError::MissingField("id".to_string()))?;
+        let email = data
+            .get("email")
+            .ok_or(EventDeserializeError::MissingField("email".to_string()))?;
+        let password = data
+            .get("password")
+            .ok_or(EventDeserializeError::MissingField("password".to_string()))?;
+        let full_name = data
+            .get("full_name")
+            .ok_or(EventDeserializeError::MissingField("full_name".to_string()))?;
+        let created_at = data
+            .get("created_at")
+            .ok_or(EventDeserializeError::MissingField(
+                "created_at".to_string(),
+            ))?;
+        let updated_at = data
+            .get("updated_at")
+            .ok_or(EventDeserializeError::MissingField(
+                "updated_at".to_string(),
+            ))?;
+
+        Ok(Box::new(UserCreatedEvent {
+            id: id.to_owned(),
+            email: email.to_owned(),
+            password: password.to_owned(),
+            full_name: full_name.to_owned(),
+            created_at: created_at.to_owned(),
+            updated_at: updated_at.to_owned(),
+            base_event,
+        }))
     }
 }
