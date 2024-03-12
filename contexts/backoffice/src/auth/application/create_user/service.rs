@@ -23,6 +23,26 @@ impl CreateUser {
         }
     }
 
+    async fn user_id_exists(&self, id: UserId) -> Result<(), String> {
+        let user = self.user_repository.find_by_id(id).await;
+
+        if let Ok(_) = user {
+            return Err("User already exists".to_string());
+        }
+
+        Ok(())
+    }
+
+    async fn user_email_exists(&self, email: UserEmail) -> Result<(), String> {
+        let user = self.user_repository.find_by_email(email).await;
+
+        if let Ok(_) = user {
+            return Err("User already exists".to_string());
+        }
+
+        Ok(())
+    }
+
     pub async fn execute(
         &self,
         id: UserId,
@@ -32,6 +52,9 @@ impl CreateUser {
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
+        self.user_id_exists(id.clone()).await?;
+        self.user_email_exists(email.clone()).await?;
+
         let hashed_password = self
             .password_hasher
             .hash(&password.to_string())

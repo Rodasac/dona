@@ -2,7 +2,7 @@ use shared::common::domain::bus::event::{
     BaseEvent, Event, EventDeserializeError, EventSerialized,
 };
 
-pub const USER_CREATED_EVENT_TYPE: &str = "user_created";
+pub const USER_CREATED_EVENT_TYPE: &str = "auth.user_created";
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserCreatedEvent {

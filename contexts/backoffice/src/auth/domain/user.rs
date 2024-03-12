@@ -97,6 +97,14 @@ impl UserCreatedAt {
             OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
         ))
     }
+
+    pub fn from_offset(offset: OffsetDateTime) -> Self {
+        UserCreatedAt(offset)
+    }
+
+    pub fn value(&self) -> &OffsetDateTime {
+        &self.0
+    }
 }
 
 impl Display for UserCreatedAt {
@@ -113,6 +121,14 @@ impl UserUpdatedAt {
         Ok(UserUpdatedAt(
             OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
         ))
+    }
+
+    pub fn from_offset(offset: OffsetDateTime) -> Self {
+        UserUpdatedAt(offset)
+    }
+
+    pub fn value(&self) -> &OffsetDateTime {
+        &self.0
     }
 }
 
@@ -145,15 +161,15 @@ impl Display for User {
 }
 
 impl User {
-    pub fn new_user(
+    pub fn new(
         id: UserId,
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
-    ) -> Result<User, String> {
-        let mut user = User {
+    ) -> User {
+        User {
             id,
             email,
             password,
@@ -162,7 +178,19 @@ impl User {
             updated_at,
 
             events: vec![],
-        };
+        }
+    }
+
+    pub fn new_user(
+        id: UserId,
+        email: UserEmail,
+        password: UserPassword,
+        full_name: UserFullName,
+        created_at: UserCreatedAt,
+        updated_at: UserUpdatedAt,
+    ) -> Result<User, String> {
+        let mut user = User::new(id, email, password, full_name, created_at, updated_at);
+
         user.record(Arc::new(UserCreatedEvent::new(
             user.id.to_string(),
             user.email.to_string(),
