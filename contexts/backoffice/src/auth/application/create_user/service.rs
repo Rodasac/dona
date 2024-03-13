@@ -89,8 +89,8 @@ mod tests {
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
-        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserPasswordMother,
-        UserUpdatedAtMother,
+        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserMother,
+        UserPasswordMother, UserUpdatedAtMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
@@ -101,6 +101,14 @@ mod tests {
             .expect_save()
             .times(1)
             .returning(|_| Err(BaseRepositoryError::AlreadyExists));
+        user_repository
+            .expect_find_by_id()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
+        user_repository
+            .expect_find_by_email()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher
@@ -132,6 +140,14 @@ mod tests {
             .expect_save()
             .times(0)
             .returning(|_| Err(BaseRepositoryError::AlreadyExists));
+        user_repository
+            .expect_find_by_id()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
+        user_repository
+            .expect_find_by_email()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher
@@ -157,9 +173,82 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_user_fails_user_id_exists() {
+        let user = UserMother::random();
+
+        let mut user_repository = MockUserRepository::new();
+        user_repository.expect_save().times(0);
+        user_repository
+            .expect_find_by_id()
+            .times(1)
+            .return_const(Ok(user.clone()));
+        user_repository.expect_find_by_email().times(0);
+
+        let mut password_hasher = MockUserPasswordHasher::new();
+        password_hasher.expect_hash().times(0);
+
+        let create_user = CreateUser::new(Arc::new(user_repository), Arc::new(password_hasher));
+
+        let result = create_user
+            .execute(
+                user.id().clone(),
+                user.email().clone(),
+                user.password().clone(),
+                user.full_name().clone(),
+                user.created_at().clone(),
+                user.updated_at().clone(),
+            )
+            .await;
+
+        assert_eq!(result, Err("User already exists".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_create_user_fails_user_email_exists() {
+        let user = UserMother::random();
+
+        let mut user_repository = MockUserRepository::new();
+        user_repository.expect_save().times(0);
+        user_repository
+            .expect_find_by_id()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
+        user_repository
+            .expect_find_by_email()
+            .times(1)
+            .return_const(Ok(user.clone()));
+
+        let mut password_hasher = MockUserPasswordHasher::new();
+        password_hasher.expect_hash().times(0);
+
+        let create_user = CreateUser::new(Arc::new(user_repository), Arc::new(password_hasher));
+
+        let result = create_user
+            .execute(
+                UserIdMother::random(),
+                user.email().clone(),
+                user.password().clone(),
+                user.full_name().clone(),
+                user.created_at().clone(),
+                user.updated_at().clone(),
+            )
+            .await;
+
+        assert_eq!(result, Err("User already exists".to_string()));
+    }
+
+    #[tokio::test]
     async fn test_create_user_success() {
         let mut user_repository = MockUserRepository::new();
         user_repository.expect_save().times(1).returning(|_| Ok(()));
+        user_repository
+            .expect_find_by_id()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
+        user_repository
+            .expect_find_by_email()
+            .times(1)
+            .returning(|_| Err(BaseRepositoryError::NotFound));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher
