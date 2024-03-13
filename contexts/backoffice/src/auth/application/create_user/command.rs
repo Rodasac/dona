@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use shared::common::domain::bus::command::{Command, CommandError, CommandHandler};
 
 use crate::auth::domain::user::{
@@ -6,8 +7,9 @@ use crate::auth::domain::user::{
 
 use super::service::CreateUser;
 
-pub const CREATE_USER_COMMAND_TYPE: &str = "auth.create_user";
+pub const CREATE_USER_COMMAND_TYPE: &str = "auth.create_user.command";
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CreateUserCommand {
     pub id: String,
     pub email: String,

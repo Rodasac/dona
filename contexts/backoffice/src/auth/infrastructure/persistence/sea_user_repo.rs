@@ -1,6 +1,8 @@
 use sea_orm::{entity::prelude::*, sea_query::OnConflict};
 use sea_orm::{DatabaseConnection, Set};
 use shared::common::domain::base_errors::BaseRepositoryError;
+use shared::common::domain::criteria::Criteria;
+use shared::common::infrastructure::criteria::sea_criteria_converter::sea_convert_criteria;
 
 use crate::auth::domain::{
     user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
@@ -47,18 +49,6 @@ impl SeaUserRepository {
 
 #[async_trait::async_trait]
 impl UserRepository for SeaUserRepository {
-    async fn find_by_email(&self, email: UserEmail) -> Result<User, BaseRepositoryError> {
-        let user = Entity::find()
-            .filter(Column::Email.contains(email.to_string()))
-            .one(&self.db)
-            .await
-            .map(|u| u.map(from_model))
-            .map_err(|e| BaseRepositoryError::UnexpectedError(e.to_string()))?
-            .ok_or(BaseRepositoryError::NotFound)?;
-
-        Ok(user)
-    }
-
     async fn find_by_id(&self, id: UserId) -> Result<User, BaseRepositoryError> {
         let user = Entity::find_by_id(Uuid::parse_str(&id.to_string()).unwrap())
             .one(&self.db)
@@ -68,6 +58,19 @@ impl UserRepository for SeaUserRepository {
             .ok_or(BaseRepositoryError::NotFound)?;
 
         Ok(user)
+    }
+
+    async fn find_by_criteria(&self, criteria: Criteria) -> Result<Vec<User>, BaseRepositoryError> {
+        let mut user_query = Entity::find();
+        let user_query = sea_convert_criteria("users", &mut user_query, criteria);
+
+        let users = user_query
+            .all(&self.db)
+            .await
+            .map(|u| u.into_iter().map(from_model).collect::<Vec<User>>())
+            .map_err(|e| BaseRepositoryError::UnexpectedError(e.to_string()))?;
+
+        Ok(users)
     }
 
     async fn find_all(&self) -> Result<Vec<User>, BaseRepositoryError> {

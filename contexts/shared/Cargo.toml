@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 async-trait.workspace = true
 lazy_static.workspace = true
+sea-orm.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true

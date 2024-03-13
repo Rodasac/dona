@@ -1,5 +1,11 @@
 use std::sync::Arc;
 
+use shared::common::domain::criteria::{
+    cursor::{Cursor, FirstField},
+    filter::{Filter, FilterField, FilterOperator, FilterValue},
+    Criteria,
+};
+
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
     user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
@@ -33,11 +39,35 @@ impl CreateUser {
         Ok(())
     }
 
-    async fn user_email_exists(&self, email: UserEmail) -> Result<(), String> {
-        let user = self.user_repository.find_by_email(email).await;
+    async fn user_email_exists(&self, id: UserId, email: UserEmail) -> Result<(), String> {
+        let user = self
+            .user_repository
+            .find_by_criteria(Criteria::new(
+                vec![
+                    Filter::new(
+                        FilterField::try_from("email".to_string()).unwrap(),
+                        FilterOperator::Equal,
+                        FilterValue::try_from(email.to_string()).unwrap(),
+                    ),
+                    Filter::new(
+                        FilterField::try_from("id::text".to_string()).unwrap(),
+                        FilterOperator::NotEqual,
+                        FilterValue::try_from(id.to_string()).unwrap(),
+                    ),
+                ],
+                None,
+                Some(Cursor::new(
+                    None,
+                    None,
+                    Some(FirstField::new(1).unwrap()),
+                    None,
+                )),
+            ))
+            .await
+            .map_err(|e| e.to_string())?;
 
-        if let Ok(_) = user {
-            return Err("User already exists".to_string());
+        if user.len() > 0 {
+            return Err("Email already exists".to_string());
         }
 
         Ok(())
@@ -53,7 +83,7 @@ impl CreateUser {
         updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
         self.user_id_exists(id.clone()).await?;
-        self.user_email_exists(email.clone()).await?;
+        self.user_email_exists(id.clone(), email.clone()).await?;
 
         let hashed_password = self
             .password_hasher
@@ -106,9 +136,9 @@ mod tests {
             .times(1)
             .returning(|_| Err(BaseRepositoryError::NotFound));
         user_repository
-            .expect_find_by_email()
+            .expect_find_by_criteria()
             .times(1)
-            .returning(|_| Err(BaseRepositoryError::NotFound));
+            .returning(|_| Ok(vec![]));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher
@@ -145,9 +175,9 @@ mod tests {
             .times(1)
             .returning(|_| Err(BaseRepositoryError::NotFound));
         user_repository
-            .expect_find_by_email()
+            .expect_find_by_criteria()
             .times(1)
-            .returning(|_| Err(BaseRepositoryError::NotFound));
+            .returning(|_| Ok(vec![]));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher
@@ -182,7 +212,7 @@ mod tests {
             .expect_find_by_id()
             .times(1)
             .return_const(Ok(user.clone()));
-        user_repository.expect_find_by_email().times(0);
+        user_repository.expect_find_by_criteria().times(0);
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher.expect_hash().times(0);
@@ -214,9 +244,9 @@ mod tests {
             .times(1)
             .returning(|_| Err(BaseRepositoryError::NotFound));
         user_repository
-            .expect_find_by_email()
+            .expect_find_by_criteria()
             .times(1)
-            .return_const(Ok(user.clone()));
+            .return_const(Ok(vec![user.clone()]));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher.expect_hash().times(0);
@@ -234,7 +264,7 @@ mod tests {
             )
             .await;
 
-        assert_eq!(result, Err("User already exists".to_string()));
+        assert_eq!(result, Err("Email already exists".to_string()));
     }
 
     #[tokio::test]
@@ -246,9 +276,9 @@ mod tests {
             .times(1)
             .returning(|_| Err(BaseRepositoryError::NotFound));
         user_repository
-            .expect_find_by_email()
+            .expect_find_by_criteria()
             .times(1)
-            .returning(|_| Err(BaseRepositoryError::NotFound));
+            .returning(|_| Ok(vec![]));
 
         let mut password_hasher = MockUserPasswordHasher::new();
         password_hasher

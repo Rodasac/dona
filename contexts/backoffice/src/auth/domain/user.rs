@@ -236,6 +236,29 @@ impl User {
     pub fn updated_at(&self) -> &UserUpdatedAt {
         &self.updated_at
     }
+
+    pub fn update(
+        &mut self,
+        password: Option<UserPassword>,
+        full_name: Option<UserFullName>,
+        updated_at: UserUpdatedAt,
+    ) -> Result<(), String> {
+        if let Some(password) = password {
+            self.password = password;
+        }
+
+        if let Some(full_name) = full_name {
+            self.full_name = full_name;
+        }
+
+        if self.updated_at.0.ge(&updated_at.0) {
+            return Err("Updated at is older or equal than current updated at".to_string());
+        }
+
+        self.updated_at = updated_at;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -315,9 +338,17 @@ pub mod tests {
             UserUpdatedAt::new(value).unwrap()
         }
 
-        pub fn random_after(created_at: &UserCreatedAt) -> UserUpdatedAt {
-            let updated_at: OffsetDateTime = DateTimeAfter(created_at.0).fake();
+        fn random_after(date: OffsetDateTime) -> UserUpdatedAt {
+            let updated_at: OffsetDateTime = DateTimeAfter(date).fake();
             UserUpdatedAt::new(updated_at.format(&Iso8601::DEFAULT).unwrap()).unwrap()
+        }
+
+        pub fn random_after_created(created_at: &UserCreatedAt) -> UserUpdatedAt {
+            Self::random_after(created_at.0)
+        }
+
+        pub fn random_after_updated(updated_at: &UserUpdatedAt) -> UserUpdatedAt {
+            Self::random_after(updated_at.0)
         }
 
         pub fn random() -> UserUpdatedAt {
@@ -341,7 +372,7 @@ pub mod tests {
 
         pub fn random() -> User {
             let created_at = UserCreatedAtMother::random();
-            let updated_at = UserUpdatedAtMother::random_after(&created_at);
+            let updated_at = UserUpdatedAtMother::random_after_created(&created_at);
             User::new_user(
                 UserId::new(Uuid::now_v7().to_string()).unwrap(),
                 UserEmail::new(Faker.fake::<String>()).unwrap(),
