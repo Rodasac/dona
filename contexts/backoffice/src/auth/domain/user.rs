@@ -109,7 +109,7 @@ impl UserCreatedAt {
 
 impl Display for UserCreatedAt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.0.format(&Iso8601::DEFAULT).unwrap())
     }
 }
 
@@ -134,7 +134,7 @@ impl UserUpdatedAt {
 
 impl Display for UserUpdatedAt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.0.format(&Iso8601::DEFAULT).unwrap())
     }
 }
 
@@ -261,13 +261,18 @@ impl User {
     }
 }
 
-#[cfg(test)]
 pub mod tests {
+    use std::ops::Range;
+
     use super::*;
 
     use fake::{
-        faker::{internet::en::SafeEmail, name::en::Name, time::en::DateTimeAfter},
-        Fake, Faker,
+        faker::{
+            internet::en::{Password, SafeEmail},
+            name::en::Name,
+            time::en::DateTimeAfter,
+        },
+        Fake,
     };
     use shared::common::domain::utils::MINIMUM_DATE_PERMITTED;
 
@@ -303,7 +308,7 @@ pub mod tests {
         }
 
         pub fn random() -> UserPassword {
-            UserPassword::new(Faker.fake::<String>()).unwrap()
+            UserPassword::new(Password(Range { start: 8, end: 32 }).fake()).unwrap()
         }
     }
 
@@ -374,10 +379,10 @@ pub mod tests {
             let created_at = UserCreatedAtMother::random();
             let updated_at = UserUpdatedAtMother::random_after_created(&created_at);
             User::new_user(
-                UserId::new(Uuid::now_v7().to_string()).unwrap(),
-                UserEmail::new(Faker.fake::<String>()).unwrap(),
-                UserPassword::new(Faker.fake::<String>()).unwrap(),
-                UserFullName::new(Faker.fake::<String>()).unwrap(),
+                UserIdMother::random(),
+                UserEmailMother::random(),
+                UserPasswordMother::random(),
+                UserFullNameMother::random(),
                 created_at,
                 updated_at,
             )
