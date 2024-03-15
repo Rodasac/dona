@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::{cursor::Cursor, filter::Filter, order::Order};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Criteria {
     filters: Vec<Filter>,
     order: Option<Order>,

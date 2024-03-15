@@ -2,7 +2,9 @@ use sea_orm::{entity::prelude::*, sea_query::OnConflict};
 use sea_orm::{DatabaseConnection, Set};
 use shared::common::domain::base_errors::BaseRepositoryError;
 use shared::common::domain::criteria::Criteria;
-use shared::common::infrastructure::criteria::sea_criteria_converter::sea_convert_criteria;
+use shared::common::infrastructure::criteria::sea_criteria_converter::{
+    convert_criteria_cursor, sea_convert_criteria,
+};
 
 use crate::auth::domain::{
     user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
@@ -62,7 +64,11 @@ impl UserRepository for SeaUserRepository {
 
     async fn find_by_criteria(&self, criteria: Criteria) -> Result<Vec<User>, BaseRepositoryError> {
         let mut user_query = Entity::find();
-        let user_query = sea_convert_criteria("users", &mut user_query, criteria);
+        let user_query = sea_convert_criteria::<Column, Entity>(&mut user_query, criteria.clone())
+            .map_err(|e| BaseRepositoryError::CriteriaCoverterError(e.to_string()))?;
+        let mut cursor_query = user_query.cursor_by(Column::CreatedAt);
+        let user_query =
+            convert_criteria_cursor::<Column, Model>(criteria.cursor(), &mut cursor_query);
 
         let users = user_query
             .all(&self.db)
@@ -120,6 +126,7 @@ mod tests {
     use migration::{Migrator, MigratorTrait};
     use sea_orm::Database;
     use shared::common::domain::criteria::{
+        cursor::{Cursor, FirstField},
         filter::{Filter, FilterField, FilterOperator, FilterValue},
         order::{Order, OrderField, OrderType},
     };
@@ -188,7 +195,12 @@ mod tests {
                 OrderField::try_from("email".to_string()).unwrap(),
                 OrderType::Asc,
             )),
-            None,
+            Some(Cursor::new(
+                None,
+                None,
+                Some(FirstField::new(1).unwrap()),
+                None,
+            )),
         );
         let user_result = repo.find_by_criteria(criteria).await;
 

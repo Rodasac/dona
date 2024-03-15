@@ -50,7 +50,7 @@ impl CreateUser {
                         FilterValue::try_from(email.to_string()).unwrap(),
                     ),
                     Filter::new(
-                        FilterField::try_from("id::text".to_string()).unwrap(),
+                        FilterField::try_from("id".to_string()).unwrap(),
                         FilterOperator::NotEqual,
                         FilterValue::try_from(id.to_string()).unwrap(),
                     ),

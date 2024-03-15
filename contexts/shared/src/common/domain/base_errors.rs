@@ -7,6 +7,7 @@ pub enum BaseRepositoryError {
     AlreadyExists,
     NotFound,
     ConnectionError,
+    CriteriaCoverterError(String),
     UnexpectedError(String),
 }
 
@@ -16,6 +17,9 @@ impl BaseRepositoryError {
             BaseRepositoryError::AlreadyExists => "Already exists".to_string(),
             BaseRepositoryError::NotFound => "Not found".to_string(),
             BaseRepositoryError::ConnectionError => "Connection error".to_string(),
+            BaseRepositoryError::CriteriaCoverterError(message) => {
+                format!("Criteria error: {}", message)
+            }
             BaseRepositoryError::UnexpectedError(message) => {
                 format!("Unexpected error: {}", message)
             }
