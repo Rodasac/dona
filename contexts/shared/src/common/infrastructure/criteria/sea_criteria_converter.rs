@@ -1,6 +1,9 @@
 use sea_orm::{DbBackend, EntityTrait, Select, SelectModel, SelectorRaw, Statement, Value};
 
-use crate::common::domain::criteria::{filter::Filter, Criteria};
+use crate::common::domain::{
+    criteria::{filter::Filter, Criteria},
+    utils::sanitize_string,
+};
 
 pub const DEFAULT_LIMIT: usize = 10;
 
@@ -26,12 +29,7 @@ fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
         for (i, filter) in criteria.filters().iter().enumerate() {
             let current_query_values_len = query_values.len();
             let filter: &Filter = filter;
-            let escaped_field = filter
-                .field()
-                .to_string()
-                .escape_default()
-                .to_string()
-                .replace(";", "");
+            let escaped_field = sanitize_string(filter.field().to_string().as_str());
             where_raw.push_str(
                 format!(
                     "{} {} ${}",
@@ -77,12 +75,7 @@ fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
     }
 
     if let Some(order) = criteria.order() {
-        let escaped_field = order
-            .order_by()
-            .to_string()
-            .escape_default()
-            .to_string()
-            .replace(";", "");
+        let escaped_field = sanitize_string(order.order_by().to_string().as_str());
         order_raw
             .push_str(format!(", {} {}", escaped_field, order.order_type().to_string()).as_str());
     }
