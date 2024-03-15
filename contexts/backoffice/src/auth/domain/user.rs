@@ -2,7 +2,7 @@ use std::{fmt::Display, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use shared::common::domain::bus::event::Event;
-use time::{format_description::well_known::Iso8601, OffsetDateTime};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
 use super::user_events::UserCreatedEvent;
@@ -94,7 +94,7 @@ pub struct UserCreatedAt(OffsetDateTime);
 impl UserCreatedAt {
     pub fn new(value: String) -> Result<Self, String> {
         Ok(UserCreatedAt(
-            OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
+            OffsetDateTime::parse(&value, &Rfc3339).map_err(|e| e.to_string())?,
         ))
     }
 
@@ -109,7 +109,7 @@ impl UserCreatedAt {
 
 impl Display for UserCreatedAt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.format(&Iso8601::DEFAULT).unwrap())
+        write!(f, "{}", self.0.format(&Rfc3339).unwrap())
     }
 }
 
@@ -119,7 +119,7 @@ pub struct UserUpdatedAt(OffsetDateTime);
 impl UserUpdatedAt {
     pub fn new(value: String) -> Result<Self, String> {
         Ok(UserUpdatedAt(
-            OffsetDateTime::parse(&value, &Iso8601::DEFAULT).map_err(|e| e.to_string())?,
+            OffsetDateTime::parse(&value, &Rfc3339).map_err(|e| e.to_string())?,
         ))
     }
 
@@ -134,11 +134,11 @@ impl UserUpdatedAt {
 
 impl Display for UserUpdatedAt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.format(&Iso8601::DEFAULT).unwrap())
+        write!(f, "{}", self.0.format(&Rfc3339).unwrap())
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct User {
     id: UserId,
     email: UserEmail,
@@ -149,6 +149,17 @@ pub struct User {
 
     events: Vec<Arc<dyn Event>>,
 }
+
+impl PartialEq for User {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.email == other.email
+            && self.password == other.password
+            && self.created_at == other.created_at
+            && self.updated_at == other.updated_at
+    }
+}
+impl Eq for User {}
 
 impl Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -332,7 +343,8 @@ pub mod tests {
         }
 
         pub fn random() -> UserCreatedAt {
-            UserCreatedAt::new(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake::<String>()).unwrap()
+            let created_at: OffsetDateTime = DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake();
+            UserCreatedAt::new(created_at.format(&Rfc3339).unwrap()).unwrap()
         }
     }
 
@@ -345,7 +357,7 @@ pub mod tests {
 
         fn random_after(date: OffsetDateTime) -> UserUpdatedAt {
             let updated_at: OffsetDateTime = DateTimeAfter(date).fake();
-            UserUpdatedAt::new(updated_at.format(&Iso8601::DEFAULT).unwrap()).unwrap()
+            UserUpdatedAt::new(updated_at.format(&Rfc3339).unwrap()).unwrap()
         }
 
         pub fn random_after_created(created_at: &UserCreatedAt) -> UserUpdatedAt {
@@ -357,7 +369,8 @@ pub mod tests {
         }
 
         pub fn random() -> UserUpdatedAt {
-            UserUpdatedAt::new(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake::<String>()).unwrap()
+            let updated_at: OffsetDateTime = DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake();
+            UserUpdatedAt::new(updated_at.format(&Rfc3339).unwrap()).unwrap()
         }
     }
 

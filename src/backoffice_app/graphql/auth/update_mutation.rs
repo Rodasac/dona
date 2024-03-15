@@ -1,9 +1,9 @@
 use async_graphql::{Context, Error, InputObject, Object, Result};
 use backoffice::auth::application::update_user::command::UpdateUserCommand;
-use time::{format_description::well_known::Iso8601, OffsetDateTime};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::backoffice_app::di::BackofficeCommandBusType;
+use crate::backoffice_app::di::CommandBusType;
 
 #[derive(InputObject)]
 pub struct UpdateUserInput {
@@ -25,10 +25,10 @@ impl UpdateUserMutation {
             id: input.id.to_string(),
             password: input.password,
             full_name: input.full_name,
-            updated_at: input.updated_at.format(&Iso8601::DEFAULT)?,
+            updated_at: input.updated_at.format(&Rfc3339)?,
         };
 
-        let command_bus = ctx.data::<BackofficeCommandBusType>()?;
+        let command_bus = ctx.data::<CommandBusType>()?;
         command_bus
             .dispatch(Box::new(command))
             .await

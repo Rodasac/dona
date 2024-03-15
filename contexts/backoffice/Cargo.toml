@@ -22,4 +22,6 @@ fake.workspace = true
 shared = { path = "../shared" }
 
 [dev-dependencies]
+migration = { path = "../../migration" }
 mockall.workspace = true
+testcontainers.workspace = true

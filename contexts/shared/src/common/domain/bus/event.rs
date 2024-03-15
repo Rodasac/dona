@@ -1,7 +1,14 @@
-use std::{any::Any, collections::HashMap, error::Error, fmt::Display, hash::Hash, sync::Arc};
+use std::{
+    any::Any,
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+    hash::Hash,
+    sync::Arc,
+};
 
 use serde::{Deserialize, Serialize};
-use time::{format_description::well_known::Iso8601, OffsetDateTime};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,7 +65,7 @@ impl EventSerialized {
     }
 }
 
-pub trait Event: Send + Sync {
+pub trait Event: Debug + Send + Sync {
     fn event_type(&self) -> &'static str;
     fn as_any(&self) -> &dyn Any;
 
@@ -81,7 +88,7 @@ impl BaseEvent {
         Self {
             event_id: Uuid::now_v7().to_string(),
             aggregate_id,
-            occurred_at: OffsetDateTime::now_utc().format(&Iso8601::DEFAULT).unwrap(),
+            occurred_at: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
         }
     }
 

@@ -31,9 +31,9 @@ impl TryFrom<String> for OrderType {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
-            "asc" => Ok(Self::Asc),
-            "desc" => Ok(Self::Desc),
-            "none" => Ok(Self::None),
+            "ASC" => Ok(Self::Asc),
+            "DESC" => Ok(Self::Desc),
+            "NONE" => Ok(Self::None),
             _ => Err("Invalid OrderType".to_string()),
         }
     }
@@ -42,9 +42,9 @@ impl TryFrom<String> for OrderType {
 impl Display for OrderType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Asc => write!(f, "asc"),
-            Self::Desc => write!(f, "desc"),
-            Self::None => write!(f, "none"),
+            Self::Asc => write!(f, "ASC"),
+            Self::Desc => write!(f, "DESC"),
+            Self::None => write!(f, "NONE"),
         }
     }
 }

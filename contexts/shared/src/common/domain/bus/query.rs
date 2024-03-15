@@ -34,6 +34,6 @@ pub trait QueryHandler: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait QueryBus: Send + Sync {
-    async fn dispatch(&self, query: Box<dyn Query>) -> Result<Box<dyn Response>, QueryError>;
+    async fn ask(&self, query: Box<dyn Query>) -> Result<Box<dyn Response>, QueryError>;
     fn register_handler(&mut self, query_type: &'static str, handler: Arc<dyn QueryHandler>);
 }

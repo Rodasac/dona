@@ -114,3 +114,166 @@ impl UserRepository for SeaUserRepository {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use migration::{Migrator, MigratorTrait};
+    use sea_orm::Database;
+    use shared::common::domain::criteria::{
+        filter::{Filter, FilterField, FilterOperator, FilterValue},
+        order::{Order, OrderField, OrderType},
+    };
+
+    use crate::{auth::domain::user::tests::UserMother, test_utils::get_db_image};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_find_by_id() {
+        let user = UserMother::random();
+
+        let docker = testcontainers::clients::Cli::default();
+        let dbimage = docker.run(get_db_image());
+        let port = dbimage.get_host_port_ipv4(5432);
+
+        let db = Database::connect(format!("postgres://dona:dona@localhost:{}/dona_test", port))
+            .await
+            .unwrap();
+        Migrator::up(&db, None).await.unwrap();
+
+        db.execute_unprepared(
+            format!(
+                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                ).as_str()
+        ).await.unwrap();
+
+        let repo = SeaUserRepository::new(db);
+
+        let user_result = repo.find_by_id(user.id().to_owned()).await;
+
+        assert!(user_result.is_ok());
+        assert_eq!(user_result.unwrap(), user);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_criteria() {
+        let user = UserMother::random();
+
+        let docker = testcontainers::clients::Cli::default();
+        let dbimage = docker.run(get_db_image());
+        let port = dbimage.get_host_port_ipv4(5432);
+
+        let db = Database::connect(format!("postgres://dona:dona@localhost:{}/dona_test", port))
+            .await
+            .unwrap();
+        Migrator::up(&db, None).await.unwrap();
+
+        db.execute_unprepared(
+            format!(
+                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                ).as_str()
+        ).await.unwrap();
+
+        let repo = SeaUserRepository::new(db);
+
+        let criteria = Criteria::new(
+            vec![Filter::new(
+                FilterField::try_from("email".to_string()).unwrap(),
+                FilterOperator::Equal,
+                FilterValue::try_from(user.email().to_string()).unwrap(),
+            )],
+            Some(Order::new(
+                OrderField::try_from("email".to_string()).unwrap(),
+                OrderType::Asc,
+            )),
+            None,
+        );
+        let user_result = repo.find_by_criteria(criteria).await;
+
+        assert!(user_result.is_ok());
+        assert_eq!(user_result.unwrap(), vec![user]);
+    }
+
+    #[tokio::test]
+    async fn should_save_user() {
+        let user = UserMother::random();
+
+        let docker = testcontainers::clients::Cli::default();
+        let dbimage = docker.run(get_db_image());
+        let port = dbimage.get_host_port_ipv4(5432);
+
+        let db = Database::connect(format!("postgres://dona:dona@localhost:{}/dona_test", port))
+            .await
+            .unwrap();
+        Migrator::up(&db, None).await.unwrap();
+
+        let repo = SeaUserRepository::new(db);
+
+        let save_result = repo.save(&user).await;
+
+        assert!(save_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn should_delete_user() {
+        let user = UserMother::random();
+
+        let docker = testcontainers::clients::Cli::default();
+        let dbimage = docker.run(get_db_image());
+        let port = dbimage.get_host_port_ipv4(5432);
+
+        let db = Database::connect(format!("postgres://dona:dona@localhost:{}/dona_test", port))
+            .await
+            .unwrap();
+        Migrator::up(&db, None).await.unwrap();
+
+        db.execute_unprepared(
+            format!(
+                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                ).as_str()
+        ).await.unwrap();
+
+        let repo = SeaUserRepository::new(db);
+
+        let delete_result = repo.delete(user.id().to_owned()).await;
+
+        assert!(delete_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn should_update_user() {
+        let mut user = UserMother::random();
+
+        let docker = testcontainers::clients::Cli::default();
+        let dbimage = docker.run(get_db_image());
+        let port = dbimage.get_host_port_ipv4(5432);
+
+        let db = Database::connect(format!("postgres://dona:dona@localhost:{}/dona_test", port))
+            .await
+            .unwrap();
+        Migrator::up(&db, None).await.unwrap();
+
+        db.execute_unprepared(
+            format!(
+                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                ).as_str()
+        ).await.unwrap();
+
+        let repo = SeaUserRepository::new(db);
+
+        user.update(
+            Some(UserPassword::new("new_password".to_string()).unwrap()),
+            Some(UserFullName::new("new_name".to_string()).unwrap()),
+            UserUpdatedAt::new("2021-01-01T00:00:00Z".to_string()).unwrap(),
+        )
+        .expect("Failed to update user aggregate");
+
+        let save_result = repo.save(&user).await;
+
+        assert!(save_result.is_ok());
+    }
+}

@@ -1,6 +1,6 @@
 use async_graphql::{EmptySubscription, MergedObject, Object, Schema};
 
-use crate::backoffice_app::graphql::BackofficeMutation;
+use crate::backoffice_app::graphql::{BackofficeMutation, BackofficeQuery};
 
 #[derive(Default)]
 pub struct BaseQuery;
@@ -13,7 +13,7 @@ impl BaseQuery {
 }
 
 #[derive(MergedObject, Default)]
-pub struct Query(BaseQuery);
+pub struct Query(BaseQuery, BackofficeQuery);
 
 #[derive(MergedObject, Default)]
 pub struct Mutation(BackofficeMutation);

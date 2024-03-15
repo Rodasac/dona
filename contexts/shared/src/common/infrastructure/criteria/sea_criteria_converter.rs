@@ -1,9 +1,6 @@
 use sea_orm::{DbBackend, EntityTrait, Select, SelectModel, SelectorRaw, Statement, Value};
 
-use crate::common::domain::criteria::{
-    filter::{Filter, FilterField, FilterOperator},
-    order, Criteria,
-};
+use crate::common::domain::criteria::{filter::Filter, Criteria};
 
 pub const DEFAULT_LIMIT: usize = 10;
 
@@ -14,11 +11,8 @@ pub fn sea_convert_criteria<E: EntityTrait>(
 ) -> SelectorRaw<SelectModel<E::Model>> {
     let (query_raw, query_values) = format_query(table_name, criteria);
 
-    query.clone().from_raw_sql(Statement::from_sql_and_values(
-        DbBackend::Postgres,
-        query_raw,
-        query_values,
-    ))
+    let statement = Statement::from_sql_and_values(DbBackend::Postgres, query_raw, query_values);
+    query.clone().from_raw_sql(statement)
 }
 
 fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
@@ -30,12 +24,20 @@ fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
     if criteria.has_filters() {
         let filter_len = criteria.filters().len() - 1;
         for (i, filter) in criteria.filters().iter().enumerate() {
+            let current_query_values_len = query_values.len();
             let filter: &Filter = filter;
+            let escaped_field = filter
+                .field()
+                .to_string()
+                .escape_default()
+                .to_string()
+                .replace(";", "");
             where_raw.push_str(
-                format_filter_field(
-                    filter.field().to_owned(),
-                    filter.operator().to_owned(),
-                    i + 1,
+                format!(
+                    "{} {} ${}",
+                    escaped_field,
+                    filter.operator().to_string(),
+                    current_query_values_len + 1
                 )
                 .as_str(),
             );
@@ -59,7 +61,8 @@ fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
             if !where_raw.is_empty() {
                 where_raw.push_str(" AND ");
             }
-            where_raw.push_str(format!("created_at > ${}", query_values.len() + 1).as_str());
+            where_raw
+                .push_str(format!("created_at > ${}::timestamp", query_values.len() + 1).as_str());
             query_values.push(after.to_string().into());
         }
 
@@ -67,44 +70,43 @@ fn format_query(table_name: &str, criteria: Criteria) -> (String, Vec<Value>) {
             if !where_raw.is_empty() {
                 where_raw.push_str(" AND ");
             }
-            where_raw.push_str(format!("created_at < ${}", query_values.len() + 1).as_str());
+            where_raw
+                .push_str(format!("created_at < ${}::timestamp", query_values.len() + 1).as_str());
             query_values.push(before.to_string().into());
         }
     }
 
     if let Some(order) = criteria.order() {
-        match order.order_type() {
-            order::OrderType::Asc => {
-                order_raw.push_str(format!(", {} ASC", order.order_by().to_string()).as_str());
-            }
-            order::OrderType::Desc => {
-                order_raw.push_str(format!(", {} DESC", order.order_by().to_string()).as_str());
-            }
-            order::OrderType::None => {}
-        }
+        let escaped_field = order
+            .order_by()
+            .to_string()
+            .escape_default()
+            .to_string()
+            .replace(";", "");
+        order_raw
+            .push_str(format!(", {} {}", escaped_field, order.order_type().to_string()).as_str());
+    }
+
+    if !where_raw.is_empty() {
+        where_raw = format!("WHERE {}", where_raw);
     }
 
     (
         format!(
-            "SELECT * FROM {} WHERE {} ORDER BY {} LIMIT {}",
+            "SELECT * FROM {} {} ORDER BY {} LIMIT {}",
             table_name, where_raw, order_raw, limit
         ),
         query_values,
     )
 }
 
-fn format_filter_field(filter: FilterField, operator: FilterOperator, index: usize) -> String {
-    format!("{} {} ${}", filter, operator, index)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::common::domain::criteria::{
         cursor::{AfterCursor, BeforeCursor, Cursor, FirstField},
-        filter::FilterValue,
+        filter::{FilterField, FilterOperator, FilterValue},
+        order::{Order, OrderField, OrderType},
     };
-
-    use self::order::{Order, OrderField};
 
     use super::*;
 
@@ -118,7 +120,7 @@ mod tests {
             )],
             Some(Order::new(
                 OrderField::try_from("id".to_string()).unwrap(),
-                order::OrderType::Asc,
+                OrderType::Asc,
             )),
             Some(Cursor::new(
                 Some(AfterCursor::try_from("2024-01-01T00:00:00Z".to_string()).unwrap()),
@@ -132,7 +134,7 @@ mod tests {
 
         assert_eq!(
             formatted_query.0,
-            "SELECT * FROM users WHERE email = $1 AND created_at > $2 AND created_at < $3 ORDER BY created_at ASC, id ASC LIMIT 15"
+            "SELECT * FROM users WHERE email = $1 AND created_at > $2::timestamp AND created_at < $3::timestamp ORDER BY created_at ASC, id ASC LIMIT 15"
         );
         assert_eq!(formatted_query.1.len(), 3);
     }

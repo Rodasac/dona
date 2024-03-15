@@ -1,7 +1,7 @@
 use std::io::Error;
 use std::sync::Arc;
 
-use crate::backoffice_app::di::{backoffice_app_di, BackofficeCommandBusType};
+use crate::backoffice_app::di::{backoffice_app_di, CommandBusType, QueryBusType};
 use crate::graphql::{DonaSchema, Mutation, Query};
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
@@ -9,6 +9,7 @@ use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use sea_orm::prelude::*;
 use shared::common::infrastructure::bus::command::InMemoryCommandBus;
+use shared::common::infrastructure::bus::query::InMemoryQueryBus;
 
 async fn graphiql() -> HttpResponse {
     HttpResponse::Ok()
@@ -27,12 +28,17 @@ async fn index(
     _req: HttpRequest,
     gql_request: GraphQLRequest,
 ) -> GraphQLResponse {
-    let mut bus = InMemoryCommandBus::default();
-    backoffice_app_di(&mut bus, &db);
+    let mut command_bus = InMemoryCommandBus::default();
+    let mut query_bus = InMemoryQueryBus::default();
+    backoffice_app_di(&mut command_bus, &mut query_bus, &db);
 
-    let bus: BackofficeCommandBusType = Arc::new(bus);
+    let command_bus: CommandBusType = Arc::new(command_bus);
+    let query_bus: QueryBusType = Arc::new(query_bus);
 
-    let request = gql_request.into_inner().data(Arc::clone(&bus));
+    let request = gql_request
+        .into_inner()
+        .data(Arc::clone(&command_bus))
+        .data(Arc::clone(&query_bus));
 
     schema.execute(request).await.into()
 }

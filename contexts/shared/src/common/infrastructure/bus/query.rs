@@ -22,7 +22,7 @@ impl InMemoryQueryBus {
 
 #[async_trait::async_trait]
 impl QueryBus for InMemoryQueryBus {
-    async fn dispatch(&self, query: Box<dyn Query>) -> Result<Box<dyn Response>, QueryError> {
+    async fn ask(&self, query: Box<dyn Query>) -> Result<Box<dyn Response>, QueryError> {
         let query_type = query.query_type();
         let handler = self.handlers.get(query_type).ok_or_else(|| {
             QueryError::new(format!("No handler found for query: {}", query_type))
@@ -85,7 +85,7 @@ mod tests {
         bus.register_handler("TestQuery", handler);
 
         let query = Box::new(TestQuery);
-        let response = bus.dispatch(query).await.unwrap();
+        let response = bus.ask(query).await.unwrap();
         let response = response.as_any().downcast_ref::<TestResponse>().unwrap();
         assert_eq!(response, &TestResponse);
     }

@@ -7,6 +7,16 @@ pub struct AfterCursor {
     value: OffsetDateTime,
 }
 
+impl AfterCursor {
+    pub fn new(value: OffsetDateTime) -> Self {
+        Self { value }
+    }
+
+    pub fn value(&self) -> &OffsetDateTime {
+        &self.value
+    }
+}
+
 impl TryFrom<String> for AfterCursor {
     type Error = String;
 
@@ -35,6 +45,16 @@ impl Display for AfterCursor {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BeforeCursor {
     value: OffsetDateTime,
+}
+
+impl BeforeCursor {
+    pub fn new(value: OffsetDateTime) -> Self {
+        Self { value }
+    }
+
+    pub fn value(&self) -> &OffsetDateTime {
+        &self.value
+    }
 }
 
 impl TryFrom<String> for BeforeCursor {
