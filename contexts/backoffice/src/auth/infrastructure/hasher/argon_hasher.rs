@@ -5,6 +5,7 @@ use argon2::{
 
 use crate::auth::domain::password_hasher::{HashError, UserPasswordHasher};
 
+#[derive(Clone, Default)]
 pub struct ArgonHasher {
     pub argon2: Argon2<'static>,
 }
@@ -12,14 +13,6 @@ pub struct ArgonHasher {
 impl ArgonHasher {
     pub fn new(argon2: Argon2<'static>) -> Self {
         Self { argon2 }
-    }
-}
-
-impl Default for ArgonHasher {
-    fn default() -> Self {
-        Self {
-            argon2: Argon2::default(),
-        }
     }
 }
 
@@ -35,7 +28,7 @@ impl UserPasswordHasher for ArgonHasher {
     }
 
     fn verify(&self, hash: &str, password: &str) -> Result<(), HashError> {
-        let password_hash = PasswordHash::new(&hash).map_err(|_| HashError::InvalidHash)?;
+        let password_hash = PasswordHash::new(hash).map_err(|_| HashError::InvalidHash)?;
         let ok = self
             .argon2
             .verify_password(password.as_bytes(), &password_hash)

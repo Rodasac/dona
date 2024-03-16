@@ -15,7 +15,7 @@ use crate::common::domain::criteria::{
 
 pub const DEFAULT_LIMIT: usize = 10;
 
-pub fn sea_convert_criteria<'a, Columns, E>(
+pub fn sea_convert_criteria<Columns, E>(
     query: &mut Select<E>,
     criteria: Criteria,
 ) -> Result<Select<E>, String>

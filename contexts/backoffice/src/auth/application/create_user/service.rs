@@ -32,7 +32,7 @@ impl CreateUser {
     async fn user_id_exists(&self, id: UserId) -> Result<(), String> {
         let user = self.user_repository.find_by_id(id).await;
 
-        if let Ok(_) = user {
+        if user.is_ok() {
             return Err("User already exists".to_string());
         }
 
@@ -66,7 +66,7 @@ impl CreateUser {
             .await
             .map_err(|e| e.to_string())?;
 
-        if user.len() > 0 {
+        if !user.is_empty() {
             return Err("Email already exists".to_string());
         }
 

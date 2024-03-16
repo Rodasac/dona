@@ -2,16 +2,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::common::domain::bus::event::{Event, EventBus, EventError, EventHandler};
 
+#[derive(Clone, Default)]
 pub struct InMemoryEventBus {
     handlers: HashMap<&'static str, Vec<Arc<dyn EventHandler>>>,
-}
-
-impl Default for InMemoryEventBus {
-    fn default() -> Self {
-        Self {
-            handlers: HashMap::new(),
-        }
-    }
 }
 
 impl InMemoryEventBus {
@@ -40,7 +33,7 @@ impl EventBus for InMemoryEventBus {
             self.handlers
                 .entry(event_type)
                 .and_modify(|handlers| handlers.push(handler.clone()))
-                .or_insert_with(Vec::new);
+                .or_default();
         }
     }
 }

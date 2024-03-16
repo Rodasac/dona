@@ -2,16 +2,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::common::domain::bus::command::{Command, CommandBus, CommandError, CommandHandler};
 
+#[derive(Clone, Default)]
 pub struct InMemoryCommandBus {
     handlers: HashMap<&'static str, Arc<dyn CommandHandler>>,
-}
-
-impl Default for InMemoryCommandBus {
-    fn default() -> Self {
-        Self {
-            handlers: HashMap::new(),
-        }
-    }
 }
 
 impl InMemoryCommandBus {

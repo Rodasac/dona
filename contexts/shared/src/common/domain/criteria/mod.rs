@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod criteria;
 pub mod cursor;
 pub mod filter;

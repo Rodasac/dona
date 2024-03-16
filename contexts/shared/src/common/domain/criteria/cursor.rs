@@ -26,7 +26,7 @@ impl TryFrom<String> for AfterCursor {
         }
 
         let date = OffsetDateTime::parse(value.as_str(), &Iso8601::DEFAULT);
-        if !date.is_ok() {
+        if date.is_err() {
             return Err("AfterCursor is not a valid date".to_string());
         }
 
@@ -66,7 +66,7 @@ impl TryFrom<String> for BeforeCursor {
         }
 
         let date = OffsetDateTime::parse(value.as_str(), &Iso8601::DEFAULT);
-        if !date.is_ok() {
+        if date.is_err() {
             return Err("BeforeCursor is not a valid date".to_string());
         }
 

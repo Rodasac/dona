@@ -39,10 +39,7 @@ pub enum FilterOperator {
 
 impl FilterOperator {
     pub fn is_positive(&self) -> bool {
-        match self {
-            Self::NotEqual | Self::NotIn | Self::NotLike => false,
-            _ => true,
-        }
+        !matches!(self, Self::NotEqual | Self::NotIn | Self::NotLike)
     }
 }
 

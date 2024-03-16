@@ -70,6 +70,7 @@ pub trait Event: Debug + Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
     fn to_primitives(&self) -> EventSerialized;
+    #[allow(clippy::wrong_self_convention)]
     fn from_primitives(
         &self,
         primitives: EventSerialized,

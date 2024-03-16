@@ -106,10 +106,10 @@ impl TryInto<Cursor> for CursorGql {
 
     fn try_into(self) -> Result<Cursor, Self::Error> {
         Cursor::new_validated(
-            self.after.map(|after| AfterCursor::new(after)),
-            self.before.map(|before| BeforeCursor::new(before)),
-            self.first.map(|first| FirstField::new(first)).transpose()?,
-            self.last.map(|last| LastField::new(last)).transpose()?,
+            self.after.map(AfterCursor::new),
+            self.before.map(BeforeCursor::new),
+            self.first.map(FirstField::new).transpose()?,
+            self.last.map(LastField::new).transpose()?,
         )
     }
 }
