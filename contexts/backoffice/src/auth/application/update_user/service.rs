@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
-    user::{User, UserFullName, UserId, UserPassword, UserUpdatedAt},
+    user::{User, UserFullName, UserId, UserIsAdmin, UserPassword, UserUpdatedAt},
     user_repository::UserRepository,
 };
 
@@ -37,6 +37,7 @@ impl UpdateUser {
         id: UserId,
         password: Option<UserPassword>,
         fullname: Option<UserFullName>,
+        is_admin: Option<UserIsAdmin>,
         updated_at: UserUpdatedAt,
     ) -> Result<User, String> {
         let mut user = self.user_id_exists(id).await?;
@@ -51,7 +52,7 @@ impl UpdateUser {
             None => None,
         };
 
-        user.update(password, fullname, updated_at)?;
+        user.update(password, fullname, is_admin, updated_at)?;
 
         self.user_repository
             .save(&user)
@@ -72,7 +73,7 @@ mod tests {
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
-        UserFullNameMother, UserMother, UserPasswordMother, UserUpdatedAtMother,
+        UserFullNameMother, UserIsAdminMother, UserMother, UserPasswordMother, UserUpdatedAtMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
@@ -82,6 +83,7 @@ mod tests {
         let id = user.id().clone();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
@@ -97,7 +99,13 @@ mod tests {
         );
 
         let result = service
-            .execute(id, Some(password), Some(fullname), updated_at)
+            .execute(
+                id,
+                Some(password),
+                Some(fullname),
+                Some(is_admin),
+                updated_at,
+            )
             .await;
 
         assert!(result.is_err());
@@ -109,6 +117,7 @@ mod tests {
         let id = user.id().clone();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
@@ -128,7 +137,13 @@ mod tests {
         let service = UpdateUser::new(Arc::new(user_repository), Arc::new(password_hasher));
 
         let result = service
-            .execute(id, Some(password), Some(fullname), updated_at)
+            .execute(
+                id,
+                Some(password),
+                Some(fullname),
+                Some(is_admin),
+                updated_at,
+            )
             .await;
 
         assert!(result.is_err());
@@ -140,6 +155,7 @@ mod tests {
         let id = user.id().clone();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
@@ -164,7 +180,13 @@ mod tests {
         let service = UpdateUser::new(Arc::new(user_repository), Arc::new(password_hasher));
 
         let result = service
-            .execute(id, Some(password), Some(fullname), updated_at)
+            .execute(
+                id,
+                Some(password),
+                Some(fullname),
+                Some(is_admin),
+                updated_at,
+            )
             .await;
 
         assert!(result.is_err());
@@ -176,6 +198,7 @@ mod tests {
         let id = user.id().clone();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
@@ -197,7 +220,13 @@ mod tests {
         let service = UpdateUser::new(Arc::new(user_repository), Arc::new(password_hasher));
 
         let result = service
-            .execute(id, Some(password), Some(fullname), updated_at)
+            .execute(
+                id,
+                Some(password),
+                Some(fullname),
+                Some(is_admin),
+                updated_at,
+            )
             .await;
 
         assert!(result.is_ok());

@@ -12,6 +12,7 @@ pub struct UpdateUserInput {
     pub password: Option<String>,
     #[graphql(validator(chars_min_length = 1, chars_max_length = 150))]
     pub full_name: Option<String>,
+    pub is_admin: Option<bool>,
     pub updated_at: OffsetDateTime,
 }
 
@@ -25,6 +26,7 @@ impl UpdateUserMutation {
             id: input.id.to_string(),
             password: input.password,
             full_name: input.full_name,
+            is_admin: input.is_admin,
             updated_at: input.updated_at.format(&Rfc3339)?,
         };
 

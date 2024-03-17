@@ -20,6 +20,8 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Users::Password).string().not_null())
                     .col(ColumnDef::new(Users::FullName).string().not_null())
+                    .col(ColumnDef::new(Users::LastLogin).timestamp_with_time_zone())
+                    .col(ColumnDef::new(Users::IsAdmin).boolean().not_null())
                     .col(
                         ColumnDef::new(Users::CreatedAt)
                             .timestamp_with_time_zone()
@@ -49,6 +51,8 @@ enum Users {
     Email,
     Password,
     FullName,
+    LastLogin,
+    IsAdmin,
     CreatedAt,
     UpdatedAt,
 }

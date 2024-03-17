@@ -14,6 +14,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventDeserializeError {
     MissingField(String),
+    InvalidField(String),
 }
 
 impl Error for EventDeserializeError {}
@@ -21,6 +22,7 @@ impl Display for EventDeserializeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MissingField(field) => write!(f, "Missing field: {}", field),
+            Self::InvalidField(field) => write!(f, "Invalid field: {}", field),
         }
     }
 }

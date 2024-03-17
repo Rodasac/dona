@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use shared::common::domain::bus::command::{Command, CommandError, CommandHandler};
 
-use crate::auth::domain::user::{UserFullName, UserId, UserPassword, UserUpdatedAt};
+use crate::auth::domain::user::{UserFullName, UserId, UserIsAdmin, UserPassword, UserUpdatedAt};
 
 use super::service::UpdateUser;
 
@@ -12,6 +12,7 @@ pub struct UpdateUserCommand {
     pub id: String,
     pub password: Option<String>,
     pub full_name: Option<String>,
+    pub is_admin: Option<bool>,
     pub updated_at: String,
 }
 
@@ -63,8 +64,16 @@ impl CommandHandler for UpdateUserCommandHandler {
             None => None,
         };
 
+        let user_is_admin = command.is_admin.map(UserIsAdmin::new);
+
         self.service
-            .execute(user_id, user_password, user_full_name, user_updated_at)
+            .execute(
+                user_id,
+                user_password,
+                user_full_name,
+                user_is_admin,
+                user_updated_at,
+            )
             .await
             .map_err(|e| CommandError::new(e.to_string()))?;
 

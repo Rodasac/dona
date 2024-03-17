@@ -14,6 +14,7 @@ pub struct CreateUserInput {
     pub password: String,
     #[graphql(validator(chars_min_length = 1, chars_max_length = 150))]
     pub full_name: String,
+    pub is_admin: bool,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }
@@ -29,6 +30,7 @@ impl CreateUserMutation {
             email: input.email,
             password: input.password,
             full_name: input.full_name,
+            is_admin: input.is_admin,
             created_at: input.created_at.format(&Rfc3339)?,
             updated_at: input.updated_at.format(&Rfc3339)?,
         };

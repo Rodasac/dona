@@ -89,6 +89,72 @@ impl Display for UserFullName {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserLastLogin(Option<OffsetDateTime>);
+
+impl UserLastLogin {
+    pub fn new(value: Option<OffsetDateTime>) -> Self {
+        UserLastLogin(value)
+    }
+
+    pub fn value(&self) -> Option<&OffsetDateTime> {
+        self.0.as_ref()
+    }
+}
+
+impl TryFrom<String> for UserLastLogin {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "None" => Ok(UserLastLogin(None)),
+            _ => Ok(UserLastLogin(Some(
+                OffsetDateTime::parse(&value, &Rfc3339).map_err(|e| e.to_string())?,
+            ))),
+        }
+    }
+}
+
+impl Display for UserLastLogin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Some(value) => write!(f, "{}", value.format(&Rfc3339).unwrap()),
+            None => write!(f, "NULL"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserIsAdmin(bool);
+
+impl UserIsAdmin {
+    pub fn new(value: bool) -> Self {
+        UserIsAdmin(value)
+    }
+
+    pub fn value(&self) -> bool {
+        self.0
+    }
+}
+
+impl Display for UserIsAdmin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", if self.0 { "true" } else { "false" })
+    }
+}
+
+impl TryFrom<String> for UserIsAdmin {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "true" => Ok(UserIsAdmin(true)),
+            "false" => Ok(UserIsAdmin(false)),
+            _ => Err("Invalid value for UserIsAdmin".to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserCreatedAt(OffsetDateTime);
 
 impl UserCreatedAt {
@@ -144,6 +210,8 @@ pub struct User {
     email: UserEmail,
     password: UserPassword,
     full_name: UserFullName,
+    last_login: UserLastLogin,
+    is_admin: UserIsAdmin,
     created_at: UserCreatedAt,
     updated_at: UserUpdatedAt,
 
@@ -177,6 +245,8 @@ impl User {
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
+        last_login: UserLastLogin,
+        is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> User {
@@ -185,6 +255,8 @@ impl User {
             email,
             password,
             full_name,
+            last_login,
+            is_admin,
             created_at,
             updated_at,
 
@@ -197,16 +269,27 @@ impl User {
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
+        is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> Result<User, String> {
-        let mut user = User::new(id, email, password, full_name, created_at, updated_at);
+        let mut user = User::new(
+            id,
+            email,
+            password,
+            full_name,
+            UserLastLogin(None),
+            is_admin,
+            created_at,
+            updated_at,
+        );
 
         user.record(Arc::new(UserCreatedEvent::new(
             user.id.to_string(),
             user.email.to_string(),
             user.password.to_string(),
             user.full_name.to_string(),
+            user.is_admin.value(),
             user.created_at.to_string(),
             user.updated_at.to_string(),
         )));
@@ -240,6 +323,14 @@ impl User {
         &self.full_name
     }
 
+    pub fn last_login(&self) -> &UserLastLogin {
+        &self.last_login
+    }
+
+    pub fn is_admin(&self) -> &UserIsAdmin {
+        &self.is_admin
+    }
+
     pub fn created_at(&self) -> &UserCreatedAt {
         &self.created_at
     }
@@ -252,6 +343,7 @@ impl User {
         &mut self,
         password: Option<UserPassword>,
         full_name: Option<UserFullName>,
+        is_admin: Option<UserIsAdmin>,
         updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
         if let Some(password) = password {
@@ -260,6 +352,10 @@ impl User {
 
         if let Some(full_name) = full_name {
             self.full_name = full_name;
+        }
+
+        if let Some(is_admin) = is_admin {
+            self.is_admin = is_admin;
         }
 
         if self.updated_at.0.ge(&updated_at.0) {
@@ -279,6 +375,7 @@ pub mod tests {
 
     use fake::{
         faker::{
+            boolean::en::Boolean,
             internet::en::{Password, SafeEmail},
             name::en::Name,
             time::en::DateTimeAfter,
@@ -335,6 +432,34 @@ pub mod tests {
         }
     }
 
+    pub struct UserLastLoginMother;
+
+    impl UserLastLoginMother {
+        pub fn create(value: Option<OffsetDateTime>) -> UserLastLogin {
+            UserLastLogin::new(value)
+        }
+
+        pub fn random() -> UserLastLogin {
+            UserLastLogin::new(Some(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake()))
+        }
+    }
+
+    pub struct UserIsAdminMother;
+
+    impl UserIsAdminMother {
+        pub fn create(value: bool) -> UserIsAdmin {
+            UserIsAdmin::new(value)
+        }
+
+        pub fn inverted(user_is_admin: &UserIsAdmin) -> UserIsAdmin {
+            UserIsAdmin::new(!user_is_admin.0)
+        }
+
+        pub fn random() -> UserIsAdmin {
+            UserIsAdmin::new(Boolean(50).fake())
+        }
+    }
+
     pub struct UserCreatedAtMother;
 
     impl UserCreatedAtMother {
@@ -382,10 +507,14 @@ pub mod tests {
             email: UserEmail,
             password: UserPassword,
             full_name: UserFullName,
+            is_admin: UserIsAdmin,
             created_at: UserCreatedAt,
             updated_at: UserUpdatedAt,
         ) -> User {
-            User::new_user(id, email, password, full_name, created_at, updated_at).unwrap()
+            User::new_user(
+                id, email, password, full_name, is_admin, created_at, updated_at,
+            )
+            .unwrap()
         }
 
         pub fn random() -> User {
@@ -396,6 +525,7 @@ pub mod tests {
                 UserEmailMother::random(),
                 UserPasswordMother::random(),
                 UserFullNameMother::random(),
+                UserIsAdminMother::random(),
                 created_at,
                 updated_at,
             )

@@ -6,6 +6,7 @@ use shared::common::infrastructure::criteria::sea_criteria_converter::{
     convert_criteria_cursor, sea_convert_criteria,
 };
 
+use crate::auth::domain::user::{UserIsAdmin, UserLastLogin};
 use crate::auth::domain::{
     user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
     user_repository::UserRepository,
@@ -19,6 +20,8 @@ pub struct Model {
     pub email: String,
     pub password: String,
     pub full_name: String,
+    pub last_login: Option<TimeDateTimeWithTimeZone>,
+    pub is_admin: bool,
     pub created_at: TimeDateTimeWithTimeZone,
     pub updated_at: TimeDateTimeWithTimeZone,
 }
@@ -34,6 +37,8 @@ fn from_model(model: Model) -> User {
         UserEmail::new(model.email).unwrap(),
         UserPassword::new(model.password).unwrap(),
         UserFullName::new(model.full_name).unwrap(),
+        UserLastLogin::new(model.last_login),
+        UserIsAdmin::new(model.is_admin),
         UserCreatedAt::from_offset(model.created_at),
         UserUpdatedAt::from_offset(model.updated_at),
     )
@@ -98,6 +103,8 @@ impl UserRepository for SeaUserRepository {
             email: Set(user.email().to_string()),
             password: Set(user.password().to_string()),
             full_name: Set(user.full_name().to_string()),
+            last_login: Set(user.last_login().value().map(|d| d.to_owned())),
+            is_admin: Set(user.is_admin().value().to_owned()),
             created_at: Set(user.created_at().value().to_owned()),
             updated_at: Set(user.updated_at().value().to_owned()),
         };
@@ -131,12 +138,15 @@ mod tests {
         order::{Order, OrderField, OrderType},
     };
 
-    use crate::{auth::domain::user::tests::UserMother, test_utils::get_db_image};
+    use crate::{
+        auth::domain::user::tests::{UserIsAdminMother, UserMother},
+        test_utils::get_db_image,
+    };
 
     use super::*;
 
     #[tokio::test]
-    async fn test_find_by_id() {
+    async fn should_find_by_id() {
         let user = UserMother::random();
 
         let docker = testcontainers::clients::Cli::default();
@@ -150,8 +160,8 @@ mod tests {
 
         db.execute_unprepared(
             format!(
-                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
                 ).as_str()
         ).await.unwrap();
 
@@ -164,7 +174,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_find_by_criteria() {
+    async fn should_find_by_criteria() {
         let user = UserMother::random();
 
         let docker = testcontainers::clients::Cli::default();
@@ -178,8 +188,8 @@ mod tests {
 
         db.execute_unprepared(
             format!(
-                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().to_string(), user.created_at().to_string(), user.updated_at().to_string()
                 ).as_str()
         ).await.unwrap();
 
@@ -243,8 +253,8 @@ mod tests {
 
         db.execute_unprepared(
             format!(
-                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
                 ).as_str()
         ).await.unwrap();
 
@@ -270,8 +280,8 @@ mod tests {
 
         db.execute_unprepared(
             format!(
-                "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+                "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+                 user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
                 ).as_str()
         ).await.unwrap();
 
@@ -280,6 +290,7 @@ mod tests {
         user.update(
             Some(UserPassword::new("new_password".to_string()).unwrap()),
             Some(UserFullName::new("new_name".to_string()).unwrap()),
+            Some(UserIsAdminMother::inverted(user.is_admin())),
             UserUpdatedAt::new("2021-01-01T00:00:00Z".to_string()).unwrap(),
         )
         .expect("Failed to update user aggregate");

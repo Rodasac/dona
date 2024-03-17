@@ -10,6 +10,7 @@ pub struct UserCreatedEvent {
     email: String,
     password: String,
     full_name: String,
+    is_admin: bool,
     created_at: String,
     updated_at: String,
 
@@ -22,6 +23,7 @@ impl UserCreatedEvent {
         email: String,
         password: String,
         full_name: String,
+        is_admin: bool,
         created_at: String,
         updated_at: String,
     ) -> Self {
@@ -30,6 +32,7 @@ impl UserCreatedEvent {
             email,
             password,
             full_name,
+            is_admin,
             created_at,
             updated_at,
             base_event: BaseEvent::new(id),
@@ -50,6 +53,10 @@ impl UserCreatedEvent {
 
     pub fn full_name(&self) -> &str {
         &self.full_name
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.is_admin
     }
 
     pub fn created_at(&self) -> &str {
@@ -80,6 +87,7 @@ impl Event for UserCreatedEvent {
                 ("email".to_string(), self.email.clone()),
                 ("password".to_string(), self.password.clone()),
                 ("full_name".to_string(), self.full_name.clone()),
+                ("is_admin".to_string(), self.is_admin.to_string()),
                 ("created_at".to_string(), self.created_at.clone()),
                 ("updated_at".to_string(), self.updated_at.clone()),
             ]
@@ -111,6 +119,11 @@ impl Event for UserCreatedEvent {
         let full_name = data
             .get("full_name")
             .ok_or(EventDeserializeError::MissingField("full_name".to_string()))?;
+        let is_admin = data
+            .get("is_admin")
+            .ok_or(EventDeserializeError::MissingField("is_admin".to_string()))?
+            .parse::<bool>()
+            .map_err(|_| EventDeserializeError::InvalidField("is_admin".to_string()))?;
         let created_at = data
             .get("created_at")
             .ok_or(EventDeserializeError::MissingField(
@@ -127,6 +140,7 @@ impl Event for UserCreatedEvent {
             email: email.to_owned(),
             password: password.to_owned(),
             full_name: full_name.to_owned(),
+            is_admin,
             created_at: created_at.to_owned(),
             updated_at: updated_at.to_owned(),
             base_event,

@@ -41,6 +41,7 @@ async fn test_backoffice_create_user() {
                 email: "{}",
                 password: "{}",
                 fullName: "{}",
+                isAdmin: {},
                 createdAt: "{}",
                 updatedAt: "{}"
             }})
@@ -50,6 +51,7 @@ async fn test_backoffice_create_user() {
         user.email().to_string(),
         user.password().to_string(),
         user.full_name().to_string(),
+        user.is_admin().to_string(),
         user.created_at().to_string(),
         user.updated_at().to_string()
     );
@@ -86,8 +88,8 @@ async fn test_backoffice_update_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
@@ -95,6 +97,7 @@ async fn test_backoffice_update_user() {
 
     let password = "new_password";
     let full_name = "new_full_name";
+    let is_admin = false;
     let updated_at = "2024-01-01T00:00:00Z";
 
     let query = format!(
@@ -104,6 +107,7 @@ async fn test_backoffice_update_user() {
                 id: "{}",
                 password: "{}",
                 fullName: "{}",
+                isAdmin: {},
                 updatedAt: "{}"
             }})
         }}
@@ -111,6 +115,7 @@ async fn test_backoffice_update_user() {
         user.id().to_string(),
         password,
         full_name,
+        is_admin,
         updated_at
     );
 
@@ -179,8 +184,8 @@ async fn test_backoffice_delete_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
@@ -238,8 +243,8 @@ async fn test_backoffice_find_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
@@ -299,8 +304,8 @@ async fn test_backoffice_find_users() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.created_at().to_string(), user.updated_at().to_string()
+            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+             user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 

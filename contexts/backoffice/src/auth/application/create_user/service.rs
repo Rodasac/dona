@@ -8,7 +8,10 @@ use shared::common::domain::criteria::{
 
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
-    user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
+    user::{
+        User, UserCreatedAt, UserEmail, UserFullName, UserId, UserIsAdmin, UserPassword,
+        UserUpdatedAt,
+    },
     user_repository::UserRepository,
 };
 
@@ -79,6 +82,7 @@ impl CreateUser {
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
+        is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
@@ -96,6 +100,7 @@ impl CreateUser {
             email,
             hashed_password,
             full_name,
+            is_admin,
             created_at,
             updated_at,
         )?;
@@ -119,8 +124,8 @@ mod tests {
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
-        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserMother,
-        UserPasswordMother, UserUpdatedAtMother,
+        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserIsAdminMother,
+        UserMother, UserPasswordMother, UserUpdatedAtMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
@@ -155,6 +160,7 @@ mod tests {
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
             )
@@ -194,6 +200,7 @@ mod tests {
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
             )
@@ -225,6 +232,7 @@ mod tests {
                 user.email().clone(),
                 user.password().clone(),
                 user.full_name().clone(),
+                user.is_admin().clone(),
                 user.created_at().clone(),
                 user.updated_at().clone(),
             )
@@ -259,6 +267,7 @@ mod tests {
                 user.email().clone(),
                 user.password().clone(),
                 user.full_name().clone(),
+                user.is_admin().clone(),
                 user.created_at().clone(),
                 user.updated_at().clone(),
             )
@@ -295,6 +304,7 @@ mod tests {
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
             )

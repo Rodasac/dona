@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use shared::common::domain::bus::command::{Command, CommandError, CommandHandler};
 
 use crate::auth::domain::user::{
-    UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt,
+    UserCreatedAt, UserEmail, UserFullName, UserId, UserIsAdmin, UserPassword, UserUpdatedAt,
 };
 
 use super::service::CreateUser;
@@ -15,6 +15,7 @@ pub struct CreateUserCommand {
     pub email: String,
     pub password: String,
     pub full_name: String,
+    pub is_admin: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -56,6 +57,7 @@ impl CommandHandler for CreateUserCommandHandler {
             .map_err(|e| CommandError::new(e.to_string()))?;
         let user_full_name = UserFullName::new(command.full_name.to_owned())
             .map_err(|e| CommandError::new(e.to_string()))?;
+        let user_is_admin = UserIsAdmin::new(command.is_admin);
         let user_created_at = UserCreatedAt::new(command.created_at.to_owned())
             .map_err(|e| CommandError::new(e.to_string()))?;
         let user_updated_at = UserUpdatedAt::new(command.updated_at.to_owned())
@@ -67,6 +69,7 @@ impl CommandHandler for CreateUserCommandHandler {
                 user_email,
                 user_password,
                 user_full_name,
+                user_is_admin,
                 user_created_at,
                 user_updated_at,
             )
