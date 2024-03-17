@@ -1,6 +1,10 @@
 use redis::Client;
 use security::session::{
     application::{
+        check_is_authenticated::{
+            command::{CheckIsAuthenticatedCommandHandler, CHECK_IS_AUTHENTICATED_COMMAND_TYPE},
+            service::IsAuthenticatedChecker,
+        },
         check_permission::{
             command::{CheckPermissionCommandHandler, CHECK_PERMISSION_COMMAND_TYPE},
             service::PermissionChecker,
@@ -34,10 +38,19 @@ pub fn security_app_di(command_bus: &mut InMemoryCommandBus, redis: &Client) {
         session_permission_checker,
     ));
 
+    let session_is_authenticated_checker = IsAuthenticatedChecker::new(session_repository.clone());
+    let session_is_authenticated_checker_handler = Arc::new(
+        CheckIsAuthenticatedCommandHandler::new(session_is_authenticated_checker),
+    );
+
     command_bus.register_handler(CREATE_SESSION_COMMAND_TYPE, session_creator_handler);
     command_bus.register_handler(LOGOUT_SESSION_COMMAND_TYPE, session_logout_handler);
     command_bus.register_handler(
         CHECK_PERMISSION_COMMAND_TYPE,
         session_permission_checker_handler,
+    );
+    command_bus.register_handler(
+        CHECK_IS_AUTHENTICATED_COMMAND_TYPE,
+        session_is_authenticated_checker_handler,
     );
 }

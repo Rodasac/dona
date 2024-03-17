@@ -3,11 +3,13 @@ use std::sync::Arc;
 
 use crate::backoffice_app::di::backoffice_app_di;
 use crate::graphql::{DonaSchema, Mutation, Query};
+use crate::security::di::security_app_di;
 use crate::{CommandBusType, QueryBusType};
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use redis::Client as RedisClient;
 use sea_orm::prelude::*;
 use shared::infrastructure::bus::command::InMemoryCommandBus;
 use shared::infrastructure::bus::query::InMemoryQueryBus;
@@ -26,12 +28,14 @@ async fn graphiql() -> HttpResponse {
 async fn index(
     schema: web::Data<DonaSchema>,
     db: web::Data<DatabaseConnection>,
+    redis: web::Data<RedisClient>,
     _req: HttpRequest,
     gql_request: GraphQLRequest,
 ) -> GraphQLResponse {
     let mut command_bus = InMemoryCommandBus::default();
     let mut query_bus = InMemoryQueryBus::default();
     backoffice_app_di(&mut command_bus, &mut query_bus, &db);
+    security_app_di(&mut command_bus, &redis);
 
     let command_bus: CommandBusType = Arc::new(command_bus);
     let query_bus: QueryBusType = Arc::new(query_bus);
@@ -44,10 +48,15 @@ async fn index(
     schema.execute(request).await.into()
 }
 
-pub fn create_app(db: DatabaseConnection, schema: DonaSchema) -> impl FnOnce(&mut ServiceConfig) {
+pub fn create_app(
+    db: DatabaseConnection,
+    redis: RedisClient,
+    schema: DonaSchema,
+) -> impl FnOnce(&mut ServiceConfig) {
     move |cfg: &mut ServiceConfig| {
         cfg.app_data(web::Data::new(schema.clone()))
             .app_data(web::Data::new(db.clone()))
+            .app_data(web::Data::new(redis.clone()))
             .service(
                 web::resource("/graphql")
                     .guard(
@@ -62,12 +71,19 @@ pub fn create_app(db: DatabaseConnection, schema: DonaSchema) -> impl FnOnce(&mu
     }
 }
 
-pub async fn run(db: &DatabaseConnection) -> Result<(), Error> {
+pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), Error> {
     let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription).finish();
     let db_clone = db.clone();
+    let redis_clone = redis.clone();
 
-    HttpServer::new(move || App::new().configure(create_app(db_clone.clone(), schema.clone())))
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new().configure(create_app(
+            db_clone.clone(),
+            redis_clone.clone(),
+            schema.clone(),
+        ))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

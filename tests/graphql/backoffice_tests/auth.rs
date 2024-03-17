@@ -12,23 +12,32 @@ use sea_orm::{ConnectionTrait, Database, Statement};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 
-use crate::common::actix::configure_app;
 use crate::common::db::get_db_image;
+use crate::common::{actix::configure_app, db::get_redis_image};
 
 #[actix_web::test]
 async fn test_backoffice_create_user() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
+
     let db_image = docker.run(image);
     let port = db_image.get_host_port_ipv4(5432);
     println!("Postgres running on port: {}", port);
+
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
 
     let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
         .await
         .unwrap();
     Migrator::up(&db, None).await.unwrap();
 
-    let test_server = test::init_service(App::new().configure(configure_app(db.clone()))).await;
+    let test_server =
+        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
+            .await;
 
     let user = UserMother::random();
 
@@ -77,6 +86,12 @@ async fn test_backoffice_update_user() {
     let port = db_image.get_host_port_ipv4(5432);
     println!("Postgres running on port: {}", port);
 
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
+
     let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
         .await
         .unwrap();
@@ -85,12 +100,14 @@ async fn test_backoffice_update_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+            r#"INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')"#,
              user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
-    let test_server = test::init_service(App::new().configure(configure_app(db.clone()))).await;
+    let test_server =
+        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
+            .await;
 
     let password = "new_password";
     let full_name = "new_full_name";
@@ -171,6 +188,12 @@ async fn test_backoffice_delete_user() {
     let port = db_image.get_host_port_ipv4(5432);
     println!("Postgres running on port: {}", port);
 
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
+
     let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
         .await
         .unwrap();
@@ -179,12 +202,14 @@ async fn test_backoffice_delete_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+            r#"INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')"#,
              user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
-    let test_server = test::init_service(App::new().configure(configure_app(db.clone()))).await;
+    let test_server =
+        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
+            .await;
 
     let query = format!(
         r#"
@@ -228,6 +253,12 @@ async fn test_backoffice_find_user() {
     let port = db_image.get_host_port_ipv4(5432);
     println!("Postgres running on port: {}", port);
 
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
+
     let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
         .await
         .unwrap();
@@ -236,12 +267,14 @@ async fn test_backoffice_find_user() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+            r#"INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')"#,
              user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
-    let test_server = test::init_service(App::new().configure(configure_app(db.clone()))).await;
+    let test_server =
+        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
+            .await;
 
     let query = format!(
         r#"
@@ -287,6 +320,12 @@ async fn test_backoffice_find_users() {
     let port = db_image.get_host_port_ipv4(5432);
     println!("Postgres running on port: {}", port);
 
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
+
     let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
         .await
         .unwrap();
@@ -295,12 +334,14 @@ async fn test_backoffice_find_users() {
     let user = UserMother::random();
     db.execute_unprepared(
         format!(
-            "INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')",
+            r#"INSERT INTO users (id, email, password, full_name, last_login, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NULL, {}, '{}', '{}')"#,
              user.id().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
             ).as_str()
     ).await.unwrap();
 
-    let test_server = test::init_service(App::new().configure(configure_app(db.clone()))).await;
+    let test_server =
+        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
+            .await;
 
     let query = format!(
         r#"
