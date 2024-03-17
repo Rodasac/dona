@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use shared::common::domain::bus::command::{Command, CommandError, CommandHandler};
+use shared::domain::bus::command::{Command, CommandError, CommandHandler};
 
 use crate::auth::domain::user::{UserFullName, UserId, UserIsAdmin, UserPassword, UserUpdatedAt};
 

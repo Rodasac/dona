@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use shared::common::domain::bus::query::{Query, QueryError, QueryHandler, Response};
+use shared::domain::bus::query::{Query, QueryError, QueryHandler, Response};
 
 use crate::auth::domain::user::UserId;
 

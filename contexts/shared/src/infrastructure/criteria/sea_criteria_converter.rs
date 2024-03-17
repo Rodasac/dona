@@ -6,7 +6,7 @@ use sea_orm::{
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::common::domain::criteria::{
+use crate::domain::criteria::{
     cursor::Cursor,
     filter::{Filter, FilterOperator},
     order::{Order, OrderType},

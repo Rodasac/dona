@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use shared::common::domain::bus::query::Response;
+use shared::domain::bus::query::Response;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserResponse {

@@ -1,8 +1,8 @@
 use sea_orm::{entity::prelude::*, sea_query::OnConflict};
 use sea_orm::{DatabaseConnection, Set};
-use shared::common::domain::base_errors::BaseRepositoryError;
-use shared::common::domain::criteria::Criteria;
-use shared::common::infrastructure::criteria::sea_criteria_converter::{
+use shared::domain::base_errors::BaseRepositoryError;
+use shared::domain::criteria::Criteria;
+use shared::infrastructure::criteria::sea_criteria_converter::{
     convert_criteria_cursor, sea_convert_criteria,
 };
 
@@ -132,7 +132,7 @@ impl UserRepository for SeaUserRepository {
 mod tests {
     use migration::{Migrator, MigratorTrait};
     use sea_orm::Database;
-    use shared::common::domain::criteria::{
+    use shared::domain::criteria::{
         cursor::{Cursor, FirstField},
         filter::{Filter, FilterField, FilterOperator, FilterValue},
         order::{Order, OrderField, OrderType},

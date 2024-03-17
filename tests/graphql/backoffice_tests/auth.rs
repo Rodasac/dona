@@ -13,11 +13,10 @@ use serde_json::json;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 
 use crate::common::actix::configure_app;
+use crate::common::db::get_db_image;
 
 #[actix_web::test]
 async fn test_backoffice_create_user() {
-    use crate::common::db::get_db_image;
-
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
     let db_image = docker.run(image);
@@ -72,8 +71,6 @@ async fn test_backoffice_create_user() {
 
 #[actix_web::test]
 async fn test_backoffice_update_user() {
-    use crate::common::db::get_db_image;
-
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
     let db_image = docker.run(image);
@@ -168,8 +165,6 @@ async fn test_backoffice_update_user() {
 
 #[actix_web::test]
 async fn test_backoffice_delete_user() {
-    use crate::common::db::get_db_image;
-
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
     let db_image = docker.run(image);
@@ -227,8 +222,6 @@ async fn test_backoffice_delete_user() {
 
 #[actix_web::test]
 async fn test_backoffice_find_user() {
-    use crate::common::db::get_db_image;
-
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
     let db_image = docker.run(image);
@@ -288,8 +281,6 @@ async fn test_backoffice_find_user() {
 
 #[actix_web::test]
 async fn test_backoffice_find_users() {
-    use crate::common::db::get_db_image;
-
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
     let db_image = docker.run(image);

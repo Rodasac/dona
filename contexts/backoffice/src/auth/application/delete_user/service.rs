@@ -27,7 +27,7 @@ mod tests {
     use crate::auth::domain::user::tests::UserIdMother;
     use crate::auth::domain::user_repository::tests::MockUserRepository;
     use mockall::predicate;
-    use shared::common::domain::base_errors::BaseRepositoryError;
+    use shared::domain::base_errors::BaseRepositoryError;
 
     #[tokio::test]
     async fn should_return_error_when_user_not_found() {

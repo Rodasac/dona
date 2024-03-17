@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use shared::common::domain::criteria::Criteria;
+use shared::domain::criteria::Criteria;
 
 use crate::auth::{
     application::response::{UserResponse, UsersResponse},

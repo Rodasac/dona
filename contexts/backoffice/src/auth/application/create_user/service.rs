@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use shared::common::domain::criteria::{
+use shared::domain::criteria::{
     cursor::{Cursor, FirstField},
     filter::{Filter, FilterField, FilterOperator, FilterValue},
     Criteria,
@@ -119,7 +119,7 @@ mod tests {
     use super::*;
 
     use mockall::predicate;
-    use shared::common::domain::base_errors::BaseRepositoryError;
+    use shared::domain::base_errors::BaseRepositoryError;
 
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;

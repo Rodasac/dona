@@ -68,7 +68,7 @@ mod tests {
     use super::*;
 
     use mockall::predicate;
-    use shared::common::domain::base_errors::BaseRepositoryError;
+    use shared::domain::base_errors::BaseRepositoryError;
 
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;

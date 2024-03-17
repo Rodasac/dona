@@ -1,7 +1,7 @@
 use std::{fmt::Display, sync::Arc};
 
 use serde::{Deserialize, Serialize};
-use shared::common::domain::bus::event::Event;
+use shared::domain::bus::event::Event;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
@@ -382,7 +382,7 @@ pub mod tests {
         },
         Fake,
     };
-    use shared::common::domain::utils::MINIMUM_DATE_PERMITTED;
+    use shared::domain::utils::MINIMUM_DATE_PERMITTED;
 
     pub struct UserIdMother;
 

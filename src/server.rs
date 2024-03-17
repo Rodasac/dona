@@ -8,8 +8,8 @@ use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use sea_orm::prelude::*;
-use shared::common::infrastructure::bus::command::InMemoryCommandBus;
-use shared::common::infrastructure::bus::query::InMemoryQueryBus;
+use shared::infrastructure::bus::command::InMemoryCommandBus;
+use shared::infrastructure::bus::query::InMemoryQueryBus;
 
 async fn graphiql() -> HttpResponse {
     HttpResponse::Ok()

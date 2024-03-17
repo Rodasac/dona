@@ -1,4 +1,4 @@
-use shared::common::domain::{base_errors::BaseRepositoryError, criteria::Criteria};
+use shared::domain::{base_errors::BaseRepositoryError, criteria::Criteria};
 
 use super::user::{User, UserId};
 

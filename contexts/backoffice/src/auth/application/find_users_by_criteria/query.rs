@@ -1,4 +1,4 @@
-use shared::common::domain::{
+use shared::domain::{
     bus::query::{Query, QueryError, QueryHandler, Response},
     criteria::Criteria,
 };

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::common::domain::bus::query::{Query, QueryBus, QueryError, QueryHandler, Response};
+use crate::domain::bus::query::{Query, QueryBus, QueryError, QueryHandler, Response};
 
 #[derive(Clone, Default)]
 pub struct InMemoryQueryBus {

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::common::domain::bus::command::{Command, CommandBus, CommandError, CommandHandler};
+use crate::domain::bus::command::{Command, CommandBus, CommandError, CommandHandler};
 
 #[derive(Clone, Default)]
 pub struct InMemoryCommandBus {

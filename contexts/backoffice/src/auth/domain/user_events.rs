@@ -1,6 +1,4 @@
-use shared::common::domain::bus::event::{
-    BaseEvent, Event, EventDeserializeError, EventSerialized,
-};
+use shared::domain::bus::event::{BaseEvent, Event, EventDeserializeError, EventSerialized};
 
 pub const USER_CREATED_EVENT_TYPE: &str = "auth.user_created";
 

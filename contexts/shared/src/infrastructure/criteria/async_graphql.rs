@@ -1,7 +1,7 @@
 use async_graphql::{Enum, InputObject};
 use time::OffsetDateTime;
 
-use crate::common::domain::criteria::{
+use crate::domain::criteria::{
     cursor::{AfterCursor, BeforeCursor, Cursor, FirstField, LastField},
     filter::{Filter, FilterField, FilterOperator, FilterValue},
     order::{Order, OrderField, OrderType},

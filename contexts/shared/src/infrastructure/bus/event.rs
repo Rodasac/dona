@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::common::domain::bus::event::{Event, EventBus, EventError, EventHandler};
+use crate::domain::bus::event::{Event, EventBus, EventError, EventHandler};
 
 #[derive(Clone, Default)]
 pub struct InMemoryEventBus {
@@ -40,7 +40,7 @@ impl EventBus for InMemoryEventBus {
 
 #[cfg(test)]
 mod tests {
-    use crate::common::domain::bus::event::{EventDeserializeError, EventSerialized};
+    use crate::domain::bus::event::{EventDeserializeError, EventSerialized};
 
     use super::*;
 

@@ -2,9 +2,7 @@ use async_graphql::{Context, Error, Object, Result};
 use backoffice::auth::application::{
     find_users_by_criteria::query::FindUsersByCriteriaQuery, response::UsersResponse,
 };
-use shared::common::{
-    domain::criteria::Criteria, infrastructure::criteria::async_graphql::CriteriaGql,
-};
+use shared::{domain::criteria::Criteria, infrastructure::criteria::async_graphql::CriteriaGql};
 
 use crate::backoffice_app::{di::QueryBusType, graphql::auth::types::User};
 

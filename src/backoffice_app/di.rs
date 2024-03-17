@@ -2,6 +2,10 @@ use std::sync::Arc;
 
 use backoffice::auth::{
     application::{
+        authenticate::{
+            command::{AuthenticateUserCommandHandler, AUTHENTICATE_USER_COMMAND_TYPE},
+            service::UserAuthenticator,
+        },
         create_user::{
             command::{CreateUserCommandHandler, CREATE_USER_COMMAND_TYPE},
             service::CreateUser,
@@ -28,7 +32,7 @@ use backoffice::auth::{
     },
 };
 use sea_orm::DatabaseConnection;
-use shared::common::{
+use shared::{
     domain::bus::{command::CommandBus, query::QueryBus},
     infrastructure::bus::{command::InMemoryCommandBus, query::InMemoryQueryBus},
 };
@@ -53,6 +57,10 @@ pub fn backoffice_app_di(
     let delete_user = UserDeleter::new(user_repository.clone());
     let delete_user_command_handler = DeleteUserCommandHandler::new(delete_user);
 
+    let authenticator_service =
+        UserAuthenticator::new(user_repository.clone(), password_hasher.clone());
+    let authenticator_command_handler = AuthenticateUserCommandHandler::new(authenticator_service);
+
     command_bus.register_handler(
         CREATE_USER_COMMAND_TYPE,
         Arc::new(create_user_command_handler),
@@ -64,6 +72,10 @@ pub fn backoffice_app_di(
     command_bus.register_handler(
         DELETE_USER_COMMAND_TYPE,
         Arc::new(delete_user_command_handler),
+    );
+    command_bus.register_handler(
+        AUTHENTICATE_USER_COMMAND_TYPE,
+        Arc::new(authenticator_command_handler),
     );
 
     let find_user_by_id_query_handler =

@@ -35,7 +35,7 @@ impl UserFinder {
 #[cfg(test)]
 mod tests {
     use mockall::predicate;
-    use shared::common::domain::base_errors::BaseRepositoryError;
+    use shared::domain::base_errors::BaseRepositoryError;
 
     use super::*;
 
