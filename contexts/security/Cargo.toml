@@ -1,0 +1,30 @@
+[package]
+name = "security"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+argon2.workspace = true
+async-trait.workspace = true
+redis.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+fake.workspace = true
+
+shared = { path = "../shared" }
+
+[dev-dependencies]
+migration = { path = "../../migration" }
+mockall.workspace = true
+testcontainers.workspace = true

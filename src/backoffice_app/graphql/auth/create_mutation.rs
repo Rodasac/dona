@@ -3,7 +3,7 @@ use backoffice::auth::application::create_user::command::CreateUserCommand;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::backoffice_app::di::CommandBusType;
+use crate::CommandBusType;
 
 #[derive(InputObject)]
 pub struct CreateUserInput {

@@ -1,8 +1,9 @@
 use std::io::Error;
 use std::sync::Arc;
 
-use crate::backoffice_app::di::{backoffice_app_di, CommandBusType, QueryBusType};
+use crate::backoffice_app::di::backoffice_app_di;
 use crate::graphql::{DonaSchema, Mutation, Query};
+use crate::{CommandBusType, QueryBusType};
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};

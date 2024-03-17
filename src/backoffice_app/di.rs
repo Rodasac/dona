@@ -37,9 +37,6 @@ use shared::{
     infrastructure::bus::{command::InMemoryCommandBus, query::InMemoryQueryBus},
 };
 
-pub type CommandBusType = Arc<dyn CommandBus>;
-pub type QueryBusType = Arc<dyn QueryBus>;
-
 pub fn backoffice_app_di(
     command_bus: &mut InMemoryCommandBus,
     query_bus: &mut InMemoryQueryBus,

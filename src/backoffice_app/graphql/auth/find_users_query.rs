@@ -4,7 +4,7 @@ use backoffice::auth::application::{
 };
 use shared::{domain::criteria::Criteria, infrastructure::criteria::async_graphql::CriteriaGql};
 
-use crate::backoffice_app::{di::QueryBusType, graphql::auth::types::User};
+use crate::{backoffice_app::graphql::auth::types::User, QueryBusType};
 
 #[derive(Debug, Default)]
 pub struct FindUsersQuery;

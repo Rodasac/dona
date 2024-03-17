@@ -2,7 +2,7 @@ use async_graphql::{Context, Error, Object, Result};
 use backoffice::auth::application::{find_user::query::FindUserByIdQuery, response::UserResponse};
 use uuid::Uuid;
 
-use crate::backoffice_app::{di::QueryBusType, graphql::auth::types::User};
+use crate::{backoffice_app::graphql::auth::types::User, QueryBusType};
 
 #[derive(Debug, Default)]
 pub struct FindUserQuery;

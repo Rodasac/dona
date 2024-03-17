@@ -2,7 +2,7 @@ use async_graphql::{Context, Error, Object, Result};
 use backoffice::auth::application::delete_user::command::DeleteUserCommand;
 use uuid::Uuid;
 
-use crate::backoffice_app::di::CommandBusType;
+use crate::CommandBusType;
 
 #[derive(Debug, Default)]
 pub struct DeleteUserMutation;
