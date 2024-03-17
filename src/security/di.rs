@@ -1,6 +1,10 @@
 use redis::Client;
 use security::session::{
     application::{
+        check_permission::{
+            command::{CheckPermissionCommandHandler, CHECK_PERMISSION_COMMAND_TYPE},
+            service::PermissionChecker,
+        },
         create::{
             command::{CreateSessionCommandHandler, CREATE_SESSION_COMMAND_TYPE},
             service::SessionCreator,
@@ -25,6 +29,15 @@ pub fn security_app_di(command_bus: &mut InMemoryCommandBus, redis: &Client) {
     let session_logout = SessionLogout::new(session_repository.clone());
     let session_logout_handler = Arc::new(LogoutSessionCommandHandler::new(session_logout));
 
+    let session_permission_checker = PermissionChecker::new(session_repository.clone());
+    let session_permission_checker_handler = Arc::new(CheckPermissionCommandHandler::new(
+        session_permission_checker,
+    ));
+
     command_bus.register_handler(CREATE_SESSION_COMMAND_TYPE, session_creator_handler);
     command_bus.register_handler(LOGOUT_SESSION_COMMAND_TYPE, session_logout_handler);
+    command_bus.register_handler(
+        CHECK_PERMISSION_COMMAND_TYPE,
+        session_permission_checker_handler,
+    );
 }
