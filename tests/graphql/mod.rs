@@ -1,19 +1,14 @@
 pub mod backoffice_tests;
-
-use actix_web::{
-    test::{self, call_and_read_body, TestRequest},
-    web::Bytes,
-    App,
-};
+use poem::{test::TestClient, EndpointExt};
 use sea_orm::Database;
 use serde_json::json;
 
 use crate::common::{
-    actix::configure_app,
     db::{get_db_image, get_redis_image},
+    poem::{configure_app, set_user_session},
 };
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_graphql_version() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -31,9 +26,10 @@ async fn test_graphql_version() {
         .await
         .unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let query = format!(
         r#"
@@ -43,16 +39,17 @@ async fn test_graphql_version() {
         "#,
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
 
-    assert_eq!(
-        response,
-        Bytes::from(r#"{"data":{"version":"1.0"}}"#,),
-        "{:?}",
-        response
-    );
+    req.assert_status_is_ok();
+    req.assert_json(json!({
+        "data": {
+            "version": "1.0"
+        }
+    }))
+    .await;
 }

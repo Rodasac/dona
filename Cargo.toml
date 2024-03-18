@@ -26,13 +26,13 @@ path = "src/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
-actix-web = "4"
 argon2 = "0.5.3"
 async-graphql = { version = "7", features = ["rust_decimal", "uuid", "time", "tokio"]}
-async-graphql-actix-web = "7"
+async-graphql-poem = "7"
 async-trait = "0.1.77"
 lazy_static = "1.4.0"
-redis = { version = "0.25.2", features = ["tokio-comp", "r2d2"] }
+poem = {version = "2.0", features = ["redis-session", "csrf", "rustls", "acme", "yaml", "test"]}
+redis = { version = "0.24.0", features = ["tokio-comp", "r2d2", "connection-manager"] } # the newer version of redis is not compatible with the current version of poem
 rust_decimal = "1.34"
 rust_decimal_macros = "1.34"
 sea-orm = { version = "0.12", default-features = false, features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros", "with-rust_decimal", "with-time", "with-uuid" ] }
@@ -47,17 +47,17 @@ mockall = "0.12.1"
 testcontainers = "0.15.0"
 
 [dependencies]
-actix-web.workspace = true
 async-graphql.workspace = true
-async-graphql-actix-web.workspace = true
+async-graphql-poem.workspace = true
 async-trait.workspace = true
+poem.workspace = true
 redis.workspace = true
 sea-orm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 time.workspace = true
 uuid.workspace = true
 tokio.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 
 shared = { path = "contexts/shared" }
 backoffice = { path = "contexts/backoffice" }
@@ -65,6 +65,7 @@ security = { path = "contexts/security" }
 
 [dev-dependencies]
 sea-orm = { version = "*", features = ["with-rust_decimal", "with-time", "with-uuid", "debug-print", "runtime-tokio-rustls", "sqlx-postgres"] }
+mockall.workspace = true
 testcontainers.workspace = true
 
 migration = { path = "migration" }

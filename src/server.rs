@@ -1,37 +1,46 @@
-use std::io::Error;
 use std::sync::Arc;
 
 use crate::backoffice_app::di::backoffice_app_di;
 use crate::graphql::{DonaSchema, Mutation, Query};
 use crate::security::di::security_app_di;
 use crate::{CommandBusType, QueryBusType};
-use actix_web::web::ServiceConfig;
-use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
-use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
+use poem::listener::TcpListener;
+use poem::middleware::AddDataEndpoint;
+use poem::session::{CookieConfig, RedisStorage, ServerSession, Session};
+use poem::web::{Data, Html};
+use poem::{get, handler, EndpointExt, IntoResponse, Route, Server};
 use redis::Client as RedisClient;
 use sea_orm::prelude::*;
 use shared::infrastructure::bus::command::InMemoryCommandBus;
 use shared::infrastructure::bus::query::InMemoryQueryBus;
 
-async fn graphiql() -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(
-            GraphiQLSource::build()
-                .endpoint("/graphql")
-                .subscription_endpoint("/ws")
-                .finish(),
-        )
+#[handler]
+async fn health_check() -> impl IntoResponse {
+    "OK"
 }
 
+#[handler]
+async fn graphiql() -> impl IntoResponse {
+    Html(
+        GraphiQLSource::build()
+            .endpoint("/graphql")
+            .subscription_endpoint("/ws")
+            .finish(),
+    )
+}
+
+#[handler]
 async fn index(
-    schema: web::Data<DonaSchema>,
-    db: web::Data<DatabaseConnection>,
-    redis: web::Data<RedisClient>,
-    _req: HttpRequest,
-    gql_request: GraphQLRequest,
+    schema: Data<&DonaSchema>,
+    db: Data<&DatabaseConnection>,
+    redis: Data<&RedisClient>,
+    session: &Session,
+    req: GraphQLRequest,
 ) -> GraphQLResponse {
+    let mut req = req.0;
+
     let mut command_bus = InMemoryCommandBus::default();
     let mut query_bus = InMemoryQueryBus::default();
     backoffice_app_di(&mut command_bus, &mut query_bus, &db);
@@ -40,50 +49,42 @@ async fn index(
     let command_bus: CommandBusType = Arc::new(command_bus);
     let query_bus: QueryBusType = Arc::new(query_bus);
 
-    let request = gql_request
-        .into_inner()
+    req = req
         .data(Arc::clone(&command_bus))
-        .data(Arc::clone(&query_bus));
+        .data(Arc::clone(&query_bus))
+        .data(session.clone());
 
-    schema.execute(request).await.into()
+    schema.execute(req).await.into()
 }
 
 pub fn create_app(
     db: DatabaseConnection,
     redis: RedisClient,
     schema: DonaSchema,
-) -> impl FnOnce(&mut ServiceConfig) {
-    move |cfg: &mut ServiceConfig| {
-        cfg.app_data(web::Data::new(schema.clone()))
-            .app_data(web::Data::new(db.clone()))
-            .app_data(web::Data::new(redis.clone()))
-            .service(
-                web::resource("/graphql")
-                    .guard(
-                        guard::Any(guard::Post())
-                            .or(guard::Get())
-                            .or(guard::Head())
-                            .or(guard::Options()),
-                    )
-                    .to(index),
-            )
-            .service(web::resource("/").guard(guard::Get()).to(graphiql));
-    }
+) -> AddDataEndpoint<
+    AddDataEndpoint<AddDataEndpoint<Route, DatabaseConnection>, RedisClient>,
+    DonaSchema,
+> {
+    Route::new()
+        .at("/graphql", get(index).post(index).options(index))
+        .at("/", get(graphiql))
+        .at("/health", get(health_check))
+        .data(db.clone())
+        .data(redis.clone())
+        .data(schema)
 }
 
-pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), Error> {
+pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), std::io::Error> {
     let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription).finish();
     let db_clone = db.clone();
     let redis_clone = redis.clone();
 
-    HttpServer::new(move || {
-        App::new().configure(create_app(
-            db_clone.clone(),
-            redis_clone.clone(),
-            schema.clone(),
-        ))
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    let session_storage = ServerSession::new(
+        CookieConfig::default().secure(false),
+        RedisStorage::new(redis.get_connection_manager().await.unwrap()),
+    );
+
+    Server::new(TcpListener::bind("127.0.0.1:8080"))
+        .run(create_app(db_clone, redis_clone, schema).with(session_storage))
+        .await
 }

@@ -1,21 +1,17 @@
-use actix_web::{
-    test::{self, call_and_read_body, TestRequest},
-    web::Bytes,
-    App,
-};
 use backoffice::auth::{
     domain::{password_hasher::UserPasswordHasher, user::tests::UserMother},
     infrastructure::hasher::argon_hasher::ArgonHasher,
 };
 use migration::{Migrator, MigratorTrait};
+use poem::{test::TestClient, EndpointExt};
 use sea_orm::{ConnectionTrait, Database, Statement};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 
-use crate::common::db::get_db_image;
-use crate::common::{actix::configure_app, db::get_redis_image};
+use crate::common::{db::get_db_image, poem::set_user_session};
+use crate::common::{db::get_redis_image, poem::configure_app};
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_backoffice_create_user() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -35,9 +31,10 @@ async fn test_backoffice_create_user() {
         .unwrap();
     Migrator::up(&db, None).await.unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let user = UserMother::random();
 
@@ -64,21 +61,22 @@ async fn test_backoffice_create_user() {
         user.updated_at().to_string()
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
 
-    assert_eq!(
-        response,
-        Bytes::from(r#"{"data":{"createUser":true}}"#,),
-        "{:?}",
-        response
-    );
+    req.assert_json(json!({
+        "data": {
+            "createUser": true
+        }
+    }))
+    .await;
 }
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_backoffice_update_user() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -105,9 +103,10 @@ async fn test_backoffice_update_user() {
             ).as_str()
     ).await.unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let password = "new_password";
     let full_name = "new_full_name";
@@ -133,18 +132,19 @@ async fn test_backoffice_update_user() {
         updated_at
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
 
-    assert_eq!(
-        response,
-        Bytes::from(r#"{"data":{"updateUser":true}}"#,),
-        "{:?}",
-        response
-    );
+    req.assert_json(json!({
+        "data": {
+            "updateUser": true
+        }
+    }))
+    .await;
 
     let updated_user = db
         .query_one(Statement::from_sql_and_values(
@@ -180,7 +180,7 @@ async fn test_backoffice_update_user() {
     );
 }
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_backoffice_delete_user() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -207,9 +207,10 @@ async fn test_backoffice_delete_user() {
             ).as_str()
     ).await.unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let query = format!(
         r#"
@@ -220,18 +221,19 @@ async fn test_backoffice_delete_user() {
         user.id().to_string(),
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
 
-    assert_eq!(
-        response,
-        Bytes::from(r#"{"data":{"deleteUser":true}}"#,),
-        "{:?}",
-        response
-    );
+    req.assert_json(json!({
+        "data": {
+            "deleteUser": true
+        }
+    }))
+    .await;
 
     let deleted_user = db
         .query_one(Statement::from_sql_and_values(
@@ -245,7 +247,7 @@ async fn test_backoffice_delete_user() {
     assert!(deleted_user.is_none());
 }
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_backoffice_find_user() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -272,9 +274,10 @@ async fn test_backoffice_find_user() {
             ).as_str()
     ).await.unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let query = format!(
         r#"
@@ -291,28 +294,28 @@ async fn test_backoffice_find_user() {
         user.id().to_string(),
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
 
-    assert_eq!(
-        response,
-        Bytes::from(format!(
-            r#"{{"data":{{"findUser":{{"id":"{}","email":"{}","fullName":"{}","createdAt":"{}","updatedAt":"{}"}}}}}}"#,
-            user.id().to_string(),
-            user.email().to_string(),
-            user.full_name().to_string(),
-            user.created_at().to_string(),
-            user.updated_at().to_string()
-        )),
-        "{:?}",
-        response
-    );
+    req.assert_json(json!({
+        "data": {
+            "findUser": {
+                "id": user.id().to_string(),
+                "email": user.email().to_string(),
+                "fullName": user.full_name().to_string(),
+                "createdAt": user.created_at().to_string(),
+                "updatedAt": user.updated_at().to_string()
+            }
+        }
+    }))
+    .await;
 }
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_backoffice_find_users() {
     let docker = testcontainers::clients::Cli::default();
     let image = get_db_image();
@@ -339,9 +342,10 @@ async fn test_backoffice_find_users() {
             ).as_str()
     ).await.unwrap();
 
-    let test_server =
-        test::init_service(App::new().configure(configure_app(db.clone(), redis_client.clone())))
-            .await;
+    let test_server = TestClient::new(
+        configure_app(db.clone(), redis_client.clone())
+            .with(set_user_session(redis_client.clone(), false).await),
+    );
 
     let query = format!(
         r#"
@@ -385,23 +389,23 @@ async fn test_backoffice_find_users() {
             .unwrap(),
     );
 
-    let req = TestRequest::post()
-        .uri("/graphql")
-        .set_json(&json!({"query": query}))
-        .to_request();
-    let response = call_and_read_body(&test_server, req).await;
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
 
-    assert_eq!(
-        response,
-        Bytes::from(format!(
-            r#"{{"data":{{"findUsers":[{{"id":"{}","email":"{}","fullName":"{}","createdAt":"{}","updatedAt":"{}"}}]}}}}"#,
-            user.id().to_string(),
-            user.email().to_string(),
-            user.full_name().to_string(),
-            user.created_at().to_string(),
-            user.updated_at().to_string()
-        )),
-        "{:?}",
-        response
-    );
+    req.assert_json(json!({
+        "data": {
+            "findUsers": [{
+                "id": user.id().to_string(),
+                "email": user.email().to_string(),
+                "fullName": user.full_name().to_string(),
+                "createdAt": user.created_at().to_string(),
+                "updatedAt": user.updated_at().to_string()
+            }]
+        }
+    }))
+    .await;
 }
