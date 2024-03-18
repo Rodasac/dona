@@ -28,6 +28,26 @@ impl Display for UserId {
     }
 }
 
+pub const ERR_INVALID_USERNAME: &str = "Invalid username";
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserUsername(String);
+
+impl UserUsername {
+    pub fn new(value: String) -> Result<Self, String> {
+        if value.is_empty() {
+            return Err(ERR_INVALID_USERNAME.to_string());
+        }
+        Ok(UserUsername(value))
+    }
+}
+
+impl Display for UserUsername {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 pub const ERR_INVALID_EMAIL: &str = "Invalid email";
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -123,6 +143,35 @@ impl Display for UserLastLogin {
     }
 }
 
+pub const ERR_INVALID_PROFILE_PICTURE: &str = "Invalid profile picture";
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserProfilePicture(Option<String>);
+
+impl UserProfilePicture {
+    pub fn new(value: Option<String>) -> Result<Self, String> {
+        if let Some(value) = &value {
+            if value.is_empty() {
+                return Err(ERR_INVALID_PROFILE_PICTURE.to_string());
+            }
+        }
+        Ok(UserProfilePicture(value))
+    }
+
+    pub fn value(&self) -> Option<&String> {
+        self.0.as_ref()
+    }
+}
+
+impl Display for UserProfilePicture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Some(value) => write!(f, "{}", value),
+            None => write!(f, "NULL"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserIsAdmin(bool);
 
@@ -207,10 +256,12 @@ impl Display for UserUpdatedAt {
 #[derive(Clone, Debug)]
 pub struct User {
     id: UserId,
+    username: UserUsername,
     email: UserEmail,
     password: UserPassword,
     full_name: UserFullName,
     last_login: UserLastLogin,
+    profile_picture: UserProfilePicture,
     is_admin: UserIsAdmin,
     created_at: UserCreatedAt,
     updated_at: UserUpdatedAt,
@@ -242,20 +293,24 @@ impl Display for User {
 impl User {
     pub fn new(
         id: UserId,
+        username: UserUsername,
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
         last_login: UserLastLogin,
+        profile_picture: UserProfilePicture,
         is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> User {
         User {
             id,
+            username,
             email,
             password,
             full_name,
             last_login,
+            profile_picture,
             is_admin,
             created_at,
             updated_at,
@@ -266,19 +321,23 @@ impl User {
 
     pub fn new_user(
         id: UserId,
+        username: UserUsername,
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
+        profile_picture: UserProfilePicture,
         is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
     ) -> Result<User, String> {
         let mut user = User::new(
             id,
+            username,
             email,
             password,
             full_name,
             UserLastLogin(None),
+            profile_picture,
             is_admin,
             created_at,
             updated_at,
@@ -311,6 +370,10 @@ impl User {
         &self.id
     }
 
+    pub fn username(&self) -> &UserUsername {
+        &self.username
+    }
+
     pub fn email(&self) -> &UserEmail {
         &self.email
     }
@@ -327,6 +390,10 @@ impl User {
         &self.last_login
     }
 
+    pub fn profile_picture(&self) -> &UserProfilePicture {
+        &self.profile_picture
+    }
+
     pub fn is_admin(&self) -> &UserIsAdmin {
         &self.is_admin
     }
@@ -341,17 +408,27 @@ impl User {
 
     pub fn update(
         &mut self,
+        username: Option<UserUsername>,
         password: Option<UserPassword>,
         full_name: Option<UserFullName>,
+        profile_picture: Option<UserProfilePicture>,
         is_admin: Option<UserIsAdmin>,
         updated_at: UserUpdatedAt,
     ) -> Result<(), String> {
+        if let Some(username) = username {
+            self.username = username;
+        }
+
         if let Some(password) = password {
             self.password = password;
         }
 
         if let Some(full_name) = full_name {
             self.full_name = full_name;
+        }
+
+        if let Some(profile_picture) = profile_picture {
+            self.profile_picture = profile_picture;
         }
 
         if let Some(is_admin) = is_admin {
@@ -376,8 +453,9 @@ pub mod tests {
     use fake::{
         faker::{
             boolean::en::Boolean,
+            filesystem::en::FilePath,
             internet::en::{Password, SafeEmail},
-            name::en::Name,
+            name::en::FirstName,
             time::en::DateTimeAfter,
         },
         Fake,
@@ -393,6 +471,18 @@ pub mod tests {
 
         pub fn random() -> UserId {
             UserId::new(Uuid::now_v7().to_string()).unwrap()
+        }
+    }
+
+    pub struct UserUsernameMother;
+
+    impl UserUsernameMother {
+        pub fn create(value: String) -> UserUsername {
+            UserUsername::new(value).unwrap()
+        }
+
+        pub fn random() -> UserUsername {
+            UserUsername::new(SafeEmail().fake::<String>()).unwrap()
         }
     }
 
@@ -428,7 +518,7 @@ pub mod tests {
         }
 
         pub fn random() -> UserFullName {
-            UserFullName::new(Name().fake::<String>()).unwrap()
+            UserFullName::new(FirstName().fake::<String>()).unwrap()
         }
     }
 
@@ -441,6 +531,18 @@ pub mod tests {
 
         pub fn random() -> UserLastLogin {
             UserLastLogin::new(Some(DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake()))
+        }
+    }
+
+    pub struct UserProfilePictureMother;
+
+    impl UserProfilePictureMother {
+        pub fn create(value: Option<String>) -> UserProfilePicture {
+            UserProfilePicture::new(value).unwrap()
+        }
+
+        pub fn random() -> UserProfilePicture {
+            UserProfilePicture::new(Some(FilePath().fake())).unwrap()
         }
     }
 
@@ -504,15 +606,25 @@ pub mod tests {
     impl UserMother {
         pub fn create(
             id: UserId,
+            username: UserUsername,
             email: UserEmail,
             password: UserPassword,
             full_name: UserFullName,
+            profile_picture: UserProfilePicture,
             is_admin: UserIsAdmin,
             created_at: UserCreatedAt,
             updated_at: UserUpdatedAt,
         ) -> User {
             User::new_user(
-                id, email, password, full_name, is_admin, created_at, updated_at,
+                id,
+                username,
+                email,
+                password,
+                full_name,
+                profile_picture,
+                is_admin,
+                created_at,
+                updated_at,
             )
             .unwrap()
         }
@@ -522,9 +634,11 @@ pub mod tests {
             let updated_at = UserUpdatedAtMother::random_after_created(&created_at);
             User::new_user(
                 UserIdMother::random(),
+                UserUsernameMother::random(),
                 UserEmailMother::random(),
                 UserPasswordMother::random(),
                 UserFullNameMother::random(),
+                UserProfilePictureMother::random(),
                 UserIsAdminMother::random(),
                 created_at,
                 updated_at,

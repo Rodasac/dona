@@ -7,7 +7,7 @@ use crate::{CommandBusType, QueryBusType};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
 use poem::listener::TcpListener;
-use poem::middleware::AddDataEndpoint;
+use poem::middleware::{AddDataEndpoint, CatchPanic, Cors};
 use poem::session::{CookieConfig, RedisStorage, ServerSession, Session};
 use poem::web::{Data, Html};
 use poem::{get, handler, EndpointExt, IntoResponse, Route, Server};
@@ -85,6 +85,11 @@ pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), std
     );
 
     Server::new(TcpListener::bind("127.0.0.1:8080"))
-        .run(create_app(db_clone, redis_clone, schema).with(session_storage))
+        .run(
+            create_app(db_clone, redis_clone, schema)
+                .with(CatchPanic::new())
+                .with(Cors::new().allow_credentials(true))
+                .with(session_storage),
+        )
         .await
 }

@@ -13,6 +13,12 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(ColumnDef::new(Users::Id).uuid().primary_key())
                     .col(
+                        ColumnDef::new(Users::Username)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
                         ColumnDef::new(Users::Email)
                             .string()
                             .not_null()
@@ -21,6 +27,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Users::Password).string().not_null())
                     .col(ColumnDef::new(Users::FullName).string().not_null())
                     .col(ColumnDef::new(Users::LastLogin).timestamp_with_time_zone())
+                    .col(ColumnDef::new(Users::ProfilePicture).string())
                     .col(ColumnDef::new(Users::IsAdmin).boolean().not_null())
                     .col(
                         ColumnDef::new(Users::CreatedAt)
@@ -48,10 +55,12 @@ impl MigrationTrait for Migration {
 enum Users {
     Table,
     Id,
+    Username,
     Email,
     Password,
     FullName,
     LastLogin,
+    ProfilePicture,
     IsAdmin,
     CreatedAt,
     UpdatedAt,

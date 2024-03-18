@@ -29,8 +29,10 @@ impl UsersFinderByCriteria {
                 .into_iter()
                 .map(|user| UserResponse {
                     id: user.id().to_string(),
+                    username: user.username().to_string(),
                     email: user.email().to_string(),
                     full_name: user.full_name().to_string(),
+                    profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
                     created_at: user.created_at().to_string(),
                     updated_at: user.updated_at().to_string(),
                 })
@@ -83,8 +85,10 @@ mod tests {
             Ok(UsersResponse {
                 users: vec![UserResponse {
                     id: user.id().to_string(),
+                    username: user.username().to_string(),
                     email: user.email().to_string(),
                     full_name: user.full_name().to_string(),
+                    profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
                     created_at: user.created_at().to_string(),
                     updated_at: user.updated_at().to_string(),
                 }]

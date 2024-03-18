@@ -1,8 +1,11 @@
-use std::sync::Arc;
+use std::{fs::File, sync::Arc};
 
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
-    user::{User, UserFullName, UserId, UserIsAdmin, UserPassword, UserUpdatedAt},
+    user::{
+        User, UserFullName, UserId, UserIsAdmin, UserPassword, UserProfilePicture, UserUpdatedAt,
+        UserUsername,
+    },
     user_repository::UserRepository,
 };
 
@@ -35,8 +38,11 @@ impl UpdateUser {
     pub async fn execute(
         &self,
         id: UserId,
+        username: Option<UserUsername>,
         password: Option<UserPassword>,
         fullname: Option<UserFullName>,
+        profile_picture: Option<UserProfilePicture>,
+        _profile_picture_file: Option<File>,
         is_admin: Option<UserIsAdmin>,
         updated_at: UserUpdatedAt,
     ) -> Result<User, String> {
@@ -52,7 +58,14 @@ impl UpdateUser {
             None => None,
         };
 
-        user.update(password, fullname, is_admin, updated_at)?;
+        user.update(
+            username,
+            password,
+            fullname,
+            profile_picture,
+            is_admin,
+            updated_at,
+        )?;
 
         self.user_repository
             .save(&user)
@@ -73,7 +86,8 @@ mod tests {
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
-        UserFullNameMother, UserIsAdminMother, UserMother, UserPasswordMother, UserUpdatedAtMother,
+        UserFullNameMother, UserIsAdminMother, UserMother, UserPasswordMother,
+        UserProfilePictureMother, UserUpdatedAtMother, UserUsernameMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
@@ -81,8 +95,11 @@ mod tests {
     async fn test_update_user_fails_user_not_found() {
         let user = UserMother::random();
         let id = user.id().clone();
+        let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let profile_picture = UserProfilePictureMother::random();
+        let profile_picture_file = Some(tempfile::tempfile().unwrap());
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
@@ -101,8 +118,11 @@ mod tests {
         let result = service
             .execute(
                 id,
+                Some(username),
                 Some(password),
                 Some(fullname),
+                Some(profile_picture),
+                profile_picture_file,
                 Some(is_admin),
                 updated_at,
             )
@@ -115,8 +135,11 @@ mod tests {
     async fn test_update_user_fails_password_hasher_fails() {
         let user = UserMother::random();
         let id = user.id().clone();
+        let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let profile_picture = UserProfilePictureMother::random();
+        let profile_picture_file = Some(tempfile::tempfile().unwrap());
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
@@ -139,8 +162,11 @@ mod tests {
         let result = service
             .execute(
                 id,
+                Some(username),
                 Some(password),
                 Some(fullname),
+                Some(profile_picture),
+                profile_picture_file,
                 Some(is_admin),
                 updated_at,
             )
@@ -153,8 +179,11 @@ mod tests {
     async fn test_update_user_fails_user_update_fails() {
         let user = UserMother::random();
         let id = user.id().clone();
+        let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let profile_picture = UserProfilePictureMother::random();
+        let profile_picture_file = Some(tempfile::tempfile().unwrap());
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
@@ -182,8 +211,11 @@ mod tests {
         let result = service
             .execute(
                 id,
+                Some(username),
                 Some(password),
                 Some(fullname),
+                Some(profile_picture),
+                profile_picture_file,
                 Some(is_admin),
                 updated_at,
             )
@@ -196,8 +228,11 @@ mod tests {
     async fn test_should_update_user() {
         let user = UserMother::random();
         let id = user.id().clone();
+        let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
+        let profile_picture = UserProfilePictureMother::random();
+        let profile_picture_file = Some(tempfile::tempfile().unwrap());
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
         let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
 
@@ -222,8 +257,11 @@ mod tests {
         let result = service
             .execute(
                 id,
+                Some(username),
                 Some(password),
                 Some(fullname),
+                Some(profile_picture),
+                profile_picture_file,
                 Some(is_admin),
                 updated_at,
             )

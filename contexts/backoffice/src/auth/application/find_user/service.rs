@@ -24,8 +24,10 @@ impl UserFinder {
 
         Ok(UserResponse {
             id: user.id().to_string(),
+            username: user.username().to_string(),
             email: user.email().to_string(),
             full_name: user.full_name().to_string(),
+            profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
             created_at: user.created_at().to_string(),
             updated_at: user.updated_at().to_string(),
         })
@@ -72,8 +74,13 @@ mod tests {
         let response = user_finder.execute(user.id().to_owned()).await.unwrap();
 
         assert_eq!(response.id, user.id().to_string());
+        assert_eq!(response.username, user.username().to_string());
         assert_eq!(response.email, user.email().to_string());
         assert_eq!(response.full_name, user.full_name().to_string());
+        assert_eq!(
+            response.profile_picture,
+            user.profile_picture().value().map(|v| v.to_owned())
+        );
         assert_eq!(response.created_at, user.created_at().to_string());
         assert_eq!(response.updated_at, user.updated_at().to_string());
     }

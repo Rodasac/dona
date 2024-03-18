@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fs::File, sync::Arc};
 
 use shared::domain::criteria::{
     cursor::{Cursor, FirstField},
@@ -10,7 +10,7 @@ use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
     user::{
         User, UserCreatedAt, UserEmail, UserFullName, UserId, UserIsAdmin, UserPassword,
-        UserUpdatedAt,
+        UserProfilePicture, UserUpdatedAt, UserUsername,
     },
     user_repository::UserRepository,
 };
@@ -79,9 +79,12 @@ impl CreateUser {
     pub async fn execute(
         &self,
         id: UserId,
+        username: UserUsername,
         email: UserEmail,
         password: UserPassword,
         full_name: UserFullName,
+        profile_picture: UserProfilePicture,
+        _profile_picture_file: Option<File>,
         is_admin: UserIsAdmin,
         created_at: UserCreatedAt,
         updated_at: UserUpdatedAt,
@@ -97,9 +100,11 @@ impl CreateUser {
 
         let user = User::new_user(
             id,
+            username,
             email,
             hashed_password,
             full_name,
+            profile_picture,
             is_admin,
             created_at,
             updated_at,
@@ -125,7 +130,8 @@ mod tests {
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
         UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserIsAdminMother,
-        UserMother, UserPasswordMother, UserUpdatedAtMother,
+        UserMother, UserPasswordMother, UserProfilePictureMother, UserUpdatedAtMother,
+        UserUsernameMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 
@@ -157,9 +163,12 @@ mod tests {
         let result = create_user
             .execute(
                 UserIdMother::random(),
+                UserUsernameMother::random(),
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserProfilePictureMother::random(),
+                Some(tempfile::tempfile().unwrap()),
                 UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
@@ -197,9 +206,12 @@ mod tests {
         let result = create_user
             .execute(
                 UserIdMother::random(),
+                UserUsernameMother::random(),
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserProfilePictureMother::random(),
+                Some(tempfile::tempfile().unwrap()),
                 UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
@@ -229,9 +241,12 @@ mod tests {
         let result = create_user
             .execute(
                 user.id().clone(),
+                user.username().clone(),
                 user.email().clone(),
                 user.password().clone(),
                 user.full_name().clone(),
+                user.profile_picture().clone(),
+                Some(tempfile::tempfile().unwrap()),
                 user.is_admin().clone(),
                 user.created_at().clone(),
                 user.updated_at().clone(),
@@ -264,9 +279,12 @@ mod tests {
         let result = create_user
             .execute(
                 UserIdMother::random(),
+                user.username().clone(),
                 user.email().clone(),
                 user.password().clone(),
                 user.full_name().clone(),
+                user.profile_picture().clone(),
+                Some(tempfile::tempfile().unwrap()),
                 user.is_admin().clone(),
                 user.created_at().clone(),
                 user.updated_at().clone(),
@@ -301,9 +319,12 @@ mod tests {
         let result = create_user
             .execute(
                 UserIdMother::random(),
+                UserUsernameMother::random(),
                 UserEmailMother::random(),
                 UserPasswordMother::create("password".to_string()),
                 UserFullNameMother::random(),
+                UserProfilePictureMother::random(),
+                Some(tempfile::tempfile().unwrap()),
                 UserIsAdminMother::random(),
                 UserCreatedAtMother::random(),
                 UserUpdatedAtMother::random(),
