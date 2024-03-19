@@ -8,6 +8,7 @@ pub struct UserResponse {
     pub email: String,
     pub full_name: String,
     pub profile_picture: Option<String>,
+    pub is_admin: bool,
     pub created_at: String,
     pub updated_at: String,
 }

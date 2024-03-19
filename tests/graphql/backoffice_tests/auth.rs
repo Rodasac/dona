@@ -3,12 +3,20 @@ use backoffice::auth::{
     infrastructure::hasher::argon_hasher::ArgonHasher,
 };
 use migration::{Migrator, MigratorTrait};
-use poem::{test::TestClient, EndpointExt};
+use poem::{
+    session::{CookieConfig, RedisStorage, ServerSession},
+    test::TestClient,
+    web::cookie::SameSite,
+    EndpointExt,
+};
 use sea_orm::{ConnectionTrait, Database, Statement};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 
-use crate::common::{db::get_db_image, poem::set_user_session};
+use crate::common::{
+    db::get_db_image,
+    poem::{set_user_session, TEST_SESSION_ID},
+};
 use crate::common::{db::get_redis_image, poem::configure_app};
 
 // TODO: Find a way to test file uploads in GraphQL with Poem (multipart/form-data)
@@ -35,7 +43,7 @@ async fn test_backoffice_create_user() {
 
     let test_server = TestClient::new(
         configure_app(db.clone(), redis_client.clone())
-            .with(set_user_session(redis_client.clone(), false).await),
+            .with(set_user_session(redis_client.clone(), true).await),
     );
 
     let user = UserMother::random();
@@ -49,7 +57,6 @@ async fn test_backoffice_create_user() {
                 email: "{}",
                 password: "{}",
                 fullName: "{}",
-                isAdmin: {},
                 createdAt: "{}",
                 updatedAt: "{}"
             }})
@@ -60,7 +67,6 @@ async fn test_backoffice_create_user() {
         user.email().to_string(),
         user.password().to_string(),
         user.full_name().to_string(),
-        user.is_admin().to_string(),
         user.created_at().to_string(),
         user.updated_at().to_string()
     );
@@ -68,6 +74,7 @@ async fn test_backoffice_create_user() {
     let req = test_server
         .post("/graphql")
         .body_json(&json!({"query": query}))
+        .header("Cookie", TEST_SESSION_ID)
         .send()
         .await;
     req.assert_status_is_ok();
@@ -111,7 +118,7 @@ async fn test_backoffice_update_user() {
 
     let test_server = TestClient::new(
         configure_app(db.clone(), redis_client.clone())
-            .with(set_user_session(redis_client.clone(), false).await),
+            .with(set_user_session(redis_client.clone(), true).await),
     );
 
     let password = "new_password";
@@ -141,6 +148,7 @@ async fn test_backoffice_update_user() {
     let req = test_server
         .post("/graphql")
         .body_json(&json!({"query": query}))
+        .header("Cookie", TEST_SESSION_ID)
         .send()
         .await;
     req.assert_status_is_ok();
@@ -165,11 +173,11 @@ async fn test_backoffice_update_user() {
     let updated_user = updated_user.unwrap();
     ArgonHasher::default()
         .verify(
+            password,
             updated_user
                 .try_get::<String>("", "password")
                 .unwrap()
                 .as_str(),
-            password,
         )
         .unwrap();
     assert_eq!(
@@ -230,6 +238,7 @@ async fn test_backoffice_delete_user() {
     let req = test_server
         .post("/graphql")
         .body_json(&json!({"query": query}))
+        .header("Cookie", TEST_SESSION_ID)
         .send()
         .await;
     req.assert_status_is_ok();
@@ -305,6 +314,7 @@ async fn test_backoffice_find_user() {
     let req = test_server
         .post("/graphql")
         .body_json(&json!({"query": query}))
+        .header("Cookie", TEST_SESSION_ID)
         .send()
         .await;
     req.assert_status_is_ok();
@@ -404,6 +414,7 @@ async fn test_backoffice_find_users() {
     let req = test_server
         .post("/graphql")
         .body_json(&json!({"query": query}))
+        .header("Cookie", TEST_SESSION_ID)
         .send()
         .await;
     req.assert_status_is_ok();
@@ -422,4 +433,120 @@ async fn test_backoffice_find_users() {
         }
     }))
     .await;
+}
+
+#[tokio::test]
+async fn test_backoffice_login_and_logout() {
+    let docker = testcontainers::clients::Cli::default();
+    let image = get_db_image();
+    let db_image = docker.run(image);
+    let port = db_image.get_host_port_ipv4(5432);
+    println!("Postgres running on port: {}", port);
+
+    let redis = docker.run(get_redis_image());
+    let redis_port = redis.get_host_port_ipv4(6379);
+    let redis_url = format!("redis://localhost:{port}/", port = redis_port);
+    println!("Redis running on port: {}", redis_port);
+    let redis_client = redis::Client::open(redis_url).unwrap();
+
+    let db = Database::connect(format!("postgres://dona:dona@localhost:{port}/dona_test"))
+        .await
+        .unwrap();
+    Migrator::up(&db, None).await.unwrap();
+
+    let user = UserMother::random();
+    let password = "password";
+    let hashed_password = ArgonHasher::default().hash(password).unwrap();
+    db.execute_unprepared(
+        format!(
+            r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
+             user.id().to_string(), user.username().to_string(), user.email().to_string(), hashed_password, user.full_name().to_string(), user.profile_picture(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
+            ).as_str()
+    ).await.unwrap();
+
+    let session_storage = ServerSession::new(
+        CookieConfig::default()
+            // Set the SameSite attribute to Lax on production
+            .same_site(SameSite::None),
+        RedisStorage::new(redis_client.get_connection_manager().await.unwrap()),
+    );
+    let test_server =
+        TestClient::new(configure_app(db.clone(), redis_client.clone()).with(session_storage));
+
+    // Test login
+
+    let query = format!(
+        r#"
+        mutation {{
+            login(input: {{
+                email: "{}",
+                password: "{}"
+            }})
+        }}
+        "#,
+        user.email().to_string(),
+        password
+    );
+
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    req.assert_status_is_ok();
+
+    req.assert_json(json!({
+        "data": {
+            "login": true
+        }
+    }))
+    .await;
+
+    let user_session: Vec<String> = redis::cmd("KEYS")
+        .arg(format!("session:{}:*", user.id().to_string()))
+        .query_async(&mut redis_client.get_tokio_connection().await.unwrap())
+        .await
+        .unwrap();
+
+    assert_eq!(user_session.len(), 1);
+
+    // Test logout
+
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .send()
+        .await;
+    let set_cookie = req.0.headers().get("set-cookie").unwrap().to_str().unwrap();
+    let cookie = set_cookie.split(';').next().unwrap();
+
+    let query = r#"
+        mutation {
+            logout
+        }
+    "#;
+
+    let req = test_server
+        .post("/graphql")
+        .body_json(&json!({"query": query}))
+        .header("Cookie", cookie)
+        .send()
+        .await;
+
+    req.assert_status_is_ok();
+    req.assert_json(json!({
+        "data": {
+            "logout": true
+        }
+    }))
+    .await;
+
+    let user_session: Vec<String> = redis::cmd("KEYS")
+        .arg(format!("session:{}:*", user.id().to_string()))
+        .query_async(&mut redis_client.get_tokio_connection().await.unwrap())
+        .await
+        .unwrap();
+
+    // Only the first session remains
+    assert_eq!(user_session.len(), 1);
 }

@@ -1,9 +1,13 @@
 use async_graphql::{Context, Error, InputObject, Object, Result, Upload};
 use backoffice::auth::application::create_user::command::CreateUserCommand;
+use poem::session::Session;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::{gql_validators::check_upload, CommandBusType};
+use crate::{
+    gql_validators::{check_admin, check_upload, is_authenticated},
+    CommandBusType,
+};
 
 #[derive(InputObject)]
 pub struct CreateUserInput {
@@ -17,7 +21,6 @@ pub struct CreateUserInput {
     #[graphql(validator(chars_min_length = 1, chars_max_length = 150))]
     pub full_name: String,
     pub profile_picture: Option<Upload>,
-    pub is_admin: bool,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }
@@ -28,6 +31,13 @@ pub struct CreateUserMutation;
 #[Object]
 impl CreateUserMutation {
     async fn create_user(&self, ctx: &Context<'_>, input: CreateUserInput) -> Result<bool> {
+        let command_bus = ctx.data::<CommandBusType>()?;
+
+        let session = ctx.data::<Session>()?;
+        if is_authenticated(session) {
+            check_admin(command_bus, session).await?;
+        }
+
         let upload_value = input
             .profile_picture
             .clone()
@@ -52,12 +62,10 @@ impl CreateUserMutation {
             full_name: input.full_name,
             profile_picture: profile_name,
             profile_picture_file: profile_file,
-            is_admin: input.is_admin,
+            is_admin: false,
             created_at: input.created_at.format(&Rfc3339)?,
             updated_at: input.updated_at.format(&Rfc3339)?,
         };
-
-        let command_bus = ctx.data::<CommandBusType>()?;
         command_bus
             .dispatch(Box::new(command))
             .await

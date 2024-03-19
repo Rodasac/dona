@@ -1,9 +1,13 @@
 use async_graphql::{Context, Error, InputObject, Object, Result, Upload};
 use backoffice::auth::application::update_user::command::UpdateUserCommand;
+use poem::session::Session;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::{gql_validators::check_upload, CommandBusType};
+use crate::{
+    gql_validators::{check_admin, check_permission, check_upload},
+    CommandBusType,
+};
 
 #[derive(InputObject)]
 pub struct UpdateUserInput {
@@ -25,6 +29,14 @@ pub struct UpdateUserMutation;
 #[Object]
 impl UpdateUserMutation {
     async fn update_user(&self, ctx: &Context<'_>, input: UpdateUserInput) -> Result<bool> {
+        let command_bus = ctx.data::<CommandBusType>()?;
+        let session = ctx.data::<Session>()?;
+
+        if input.is_admin.is_some() {
+            check_admin(command_bus, session).await?;
+        }
+        check_permission(command_bus, session).await?;
+
         let upload_value = input
             .profile_picture
             .clone()
@@ -57,8 +69,6 @@ impl UpdateUserMutation {
             profile_picture_file: profile_file,
             updated_at: input.updated_at.format(&Rfc3339)?,
         };
-
-        let command_bus = ctx.data::<CommandBusType>()?;
         command_bus
             .dispatch(Box::new(command))
             .await

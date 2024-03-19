@@ -27,7 +27,7 @@ impl UserPasswordHasher for ArgonHasher {
             .to_string())
     }
 
-    fn verify(&self, hash: &str, password: &str) -> Result<(), HashError> {
+    fn verify(&self, password: &str, hash: &str) -> Result<(), HashError> {
         let password_hash = PasswordHash::new(hash).map_err(|_| HashError::InvalidHash)?;
         let ok = self
             .argon2

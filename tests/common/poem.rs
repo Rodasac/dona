@@ -17,6 +17,8 @@ use security::session::domain::user::UserSession;
 use serde_json::Value;
 use time::OffsetDateTime;
 
+pub const TEST_SESSION_ID: &str = "poem-session=BATz_xth_nsSbYDj5mTUJHfpVEOCiZefaKjJEUgTh14";
+
 pub fn configure_app(
     db: DatabaseConnection,
     redis: RedisClient,

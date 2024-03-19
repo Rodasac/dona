@@ -33,6 +33,7 @@ impl UsersFinderByCriteria {
                     email: user.email().to_string(),
                     full_name: user.full_name().to_string(),
                     profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
+                    is_admin: user.is_admin().value(),
                     created_at: user.created_at().to_string(),
                     updated_at: user.updated_at().to_string(),
                 })
@@ -89,6 +90,7 @@ mod tests {
                     email: user.email().to_string(),
                     full_name: user.full_name().to_string(),
                     profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
+                    is_admin: user.is_admin().value(),
                     created_at: user.created_at().to_string(),
                     updated_at: user.updated_at().to_string(),
                 }]

@@ -10,6 +10,7 @@ use poem::endpoint::StaticFilesEndpoint;
 use poem::listener::TcpListener;
 use poem::middleware::{AddDataEndpoint, CatchPanic, Cors};
 use poem::session::{CookieConfig, RedisStorage, ServerSession, Session};
+use poem::web::cookie::SameSite;
 use poem::web::{Data, Html};
 use poem::{get, handler, EndpointExt, IntoResponse, Route, Server};
 use redis::Client as RedisClient;
@@ -82,7 +83,9 @@ pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), std
     let redis_clone = redis.clone();
 
     let session_storage = ServerSession::new(
-        CookieConfig::default().secure(false),
+        CookieConfig::default()
+            // Set the SameSite attribute to Lax on production
+            .same_site(SameSite::None),
         RedisStorage::new(redis.get_connection_manager().await.unwrap()),
     );
 
@@ -90,7 +93,7 @@ pub async fn run(db: &DatabaseConnection, redis: &RedisClient) -> Result<(), std
         .run(
             create_app(db_clone, redis_clone, schema)
                 .with(CatchPanic::new())
-                .with(Cors::new().allow_credentials(true))
+                .with(Cors::new().allow_credentials(true).allow_origin_regex("*"))
                 .with(session_storage),
         )
         .await
