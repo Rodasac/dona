@@ -11,6 +11,8 @@ use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 use crate::common::{db::get_db_image, poem::set_user_session};
 use crate::common::{db::get_redis_image, poem::configure_app};
 
+// TODO: Find a way to test file uploads in GraphQL with Poem (multipart/form-data)
+// With the Altair GraphQL Client and Apollo Studio, it works.
 #[tokio::test]
 async fn test_backoffice_create_user() {
     let docker = testcontainers::clients::Cli::default();
@@ -78,6 +80,8 @@ async fn test_backoffice_create_user() {
     .await;
 }
 
+// TODO: Find a way to test file uploads in GraphQL with Poem (multipart/form-data)
+// With the Altair GraphQL Client and Apollo Studio, it works.
 #[tokio::test]
 async fn test_backoffice_update_user() {
     let docker = testcontainers::clients::Cli::default();
@@ -286,8 +290,10 @@ async fn test_backoffice_find_user() {
         query {{
             findUser(id: "{}") {{
                 id
+                username
                 email
                 fullName
+                profilePicture
                 createdAt
                 updatedAt
             }}
@@ -307,8 +313,10 @@ async fn test_backoffice_find_user() {
         "data": {
             "findUser": {
                 "id": user.id().to_string(),
+                "username": user.username().to_string(),
                 "email": user.email().to_string(),
                 "fullName": user.full_name().to_string(),
+                "profilePicture": user.profile_picture().value().map(|v| v.to_owned()),
                 "createdAt": user.created_at().to_string(),
                 "updatedAt": user.updated_at().to_string()
             }
@@ -369,8 +377,10 @@ async fn test_backoffice_find_users() {
                 }}
             }}) {{
                 id
+                username
                 email
                 fullName
+                profilePicture
                 createdAt
                 updatedAt
             }}
@@ -402,8 +412,10 @@ async fn test_backoffice_find_users() {
         "data": {
             "findUsers": [{
                 "id": user.id().to_string(),
+                "username": user.username().to_string(),
                 "email": user.email().to_string(),
                 "fullName": user.full_name().to_string(),
+                "profilePicture": user.profile_picture().value().map(|v| v.to_owned()),
                 "createdAt": user.created_at().to_string(),
                 "updatedAt": user.updated_at().to_string()
             }]

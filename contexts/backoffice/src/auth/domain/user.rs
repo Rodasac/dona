@@ -453,7 +453,7 @@ pub mod tests {
     use fake::{
         faker::{
             boolean::en::Boolean,
-            filesystem::en::FilePath,
+            filesystem::en::FileName,
             internet::en::{Password, SafeEmail},
             name::en::FirstName,
             time::en::DateTimeAfter,
@@ -542,7 +542,8 @@ pub mod tests {
         }
 
         pub fn random() -> UserProfilePicture {
-            UserProfilePicture::new(Some(FilePath().fake())).unwrap()
+            UserProfilePicture::new(Some(format!("{}.{}", FileName().fake::<String>(), "jpg")))
+                .unwrap()
         }
     }
 

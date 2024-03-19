@@ -6,6 +6,7 @@ use crate::security::di::security_app_di;
 use crate::{CommandBusType, QueryBusType};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
+use poem::endpoint::StaticFilesEndpoint;
 use poem::listener::TcpListener;
 use poem::middleware::{AddDataEndpoint, CatchPanic, Cors};
 use poem::session::{CookieConfig, RedisStorage, ServerSession, Session};
@@ -69,6 +70,7 @@ pub fn create_app(
         .at("/graphql", get(index).post(index).options(index))
         .at("/", get(graphiql))
         .at("/health", get(health_check))
+        .nest("/media", StaticFilesEndpoint::new("storage"))
         .data(db.clone())
         .data(redis.clone())
         .data(schema)

@@ -3,7 +3,7 @@ use backoffice::auth::application::update_user::command::UpdateUserCommand;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::{CommandBusType, MAX_UPLOAD_SIZE};
+use crate::{gql_validators::check_upload, CommandBusType};
 
 #[derive(InputObject)]
 pub struct UpdateUserInput {
@@ -30,13 +30,8 @@ impl UpdateUserMutation {
             .clone()
             .map(|p| p.map(|p| p.value(ctx)).transpose())
             .transpose()?;
-
-        if let Some(upload_value) = &upload_value {
-            if let Some(upload_value) = upload_value {
-                if upload_value.size()? > MAX_UPLOAD_SIZE {
-                    return Err(Error::new("File too large"));
-                }
-            }
+        if let Some(value) = &upload_value {
+            check_upload(value)?;
         }
 
         let (profile_name, profile_file) = if let Some(upload_value) = &upload_value {

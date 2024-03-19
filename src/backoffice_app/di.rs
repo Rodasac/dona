@@ -34,7 +34,10 @@ use backoffice::auth::{
 use sea_orm::DatabaseConnection;
 use shared::{
     domain::bus::{command::CommandBus, query::QueryBus},
-    infrastructure::bus::{command::InMemoryCommandBus, query::InMemoryQueryBus},
+    infrastructure::{
+        bus::{command::InMemoryCommandBus, query::InMemoryQueryBus},
+        storage::DiskFileStorageRepository,
+    },
 };
 
 pub fn backoffice_app_di(
@@ -44,11 +47,20 @@ pub fn backoffice_app_di(
 ) {
     let user_repository = Arc::new(SeaUserRepository::new(db.clone()));
     let password_hasher = Arc::new(ArgonHasher::default());
+    let backoffice_file_storage = Arc::new(DiskFileStorageRepository::default());
 
-    let create_user = CreateUser::new(user_repository.clone(), password_hasher.clone());
+    let create_user = CreateUser::new(
+        user_repository.clone(),
+        password_hasher.clone(),
+        backoffice_file_storage.clone(),
+    );
     let create_user_command_handler = CreateUserCommandHandler::new(create_user);
 
-    let update_user = UpdateUser::new(user_repository.clone(), password_hasher.clone());
+    let update_user = UpdateUser::new(
+        user_repository.clone(),
+        password_hasher.clone(),
+        backoffice_file_storage.clone(),
+    );
     let update_user_command_handler = UpdateUserCommandHandler::new(update_user);
 
     let delete_user = UserDeleter::new(user_repository.clone());
