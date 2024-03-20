@@ -144,4 +144,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-storage/
+storage_files/

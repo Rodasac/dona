@@ -71,7 +71,7 @@ pub fn create_app(
         .at("/graphql", get(index).post(index).options(index))
         .at("/", get(graphiql))
         .at("/health", get(health_check))
-        .nest("/media", StaticFilesEndpoint::new("storage"))
+        .nest("/media", StaticFilesEndpoint::new("storage_files"))
         .data(db.clone())
         .data(redis.clone())
         .data(schema)
