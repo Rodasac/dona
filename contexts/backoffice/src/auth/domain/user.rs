@@ -345,6 +345,7 @@ impl User {
 
         user.record(Arc::new(UserCreatedEvent::new(
             user.id.to_string(),
+            user.username.to_string(),
             user.email.to_string(),
             user.password.to_string(),
             user.full_name.to_string(),

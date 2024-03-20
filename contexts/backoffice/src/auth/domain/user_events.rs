@@ -5,6 +5,7 @@ pub const USER_CREATED_EVENT_TYPE: &str = "auth.user_created";
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserCreatedEvent {
     id: String,
+    username: String,
     email: String,
     password: String,
     full_name: String,
@@ -18,6 +19,7 @@ pub struct UserCreatedEvent {
 impl UserCreatedEvent {
     pub fn new(
         id: String,
+        username: String,
         email: String,
         password: String,
         full_name: String,
@@ -27,6 +29,7 @@ impl UserCreatedEvent {
     ) -> Self {
         Self {
             id: id.clone(),
+            username,
             email,
             password,
             full_name,
@@ -82,6 +85,7 @@ impl Event for UserCreatedEvent {
             self.base_event.occurred_at().to_string(),
             vec![
                 ("id".to_string(), self.id.clone()),
+                ("username".to_string(), self.username.clone()),
                 ("email".to_string(), self.email.clone()),
                 ("password".to_string(), self.password.clone()),
                 ("full_name".to_string(), self.full_name.clone()),
@@ -108,6 +112,9 @@ impl Event for UserCreatedEvent {
         let id = data
             .get("id")
             .ok_or(EventDeserializeError::MissingField("id".to_string()))?;
+        let username = data
+            .get("username")
+            .ok_or(EventDeserializeError::MissingField("username".to_string()))?;
         let email = data
             .get("email")
             .ok_or(EventDeserializeError::MissingField("email".to_string()))?;
@@ -135,6 +142,7 @@ impl Event for UserCreatedEvent {
 
         Ok(Box::new(UserCreatedEvent {
             id: id.to_owned(),
+            username: username.to_owned(),
             email: email.to_owned(),
             password: password.to_owned(),
             full_name: full_name.to_owned(),
