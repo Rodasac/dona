@@ -1,6 +1,8 @@
-use shared::domain::{base_errors::BaseRepositoryError, criteria::Criteria};
+use shared::domain::{
+    base_errors::BaseRepositoryError, criteria::Criteria, value_objects::user_id::UserId,
+};
 
-use super::user::{User, UserId};
+use super::user::User;
 
 #[async_trait::async_trait]
 pub trait UserRepository: Send + Sync {

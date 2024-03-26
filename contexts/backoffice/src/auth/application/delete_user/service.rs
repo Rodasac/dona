@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::auth::domain::{user::UserId, user_repository::UserRepository};
+use shared::domain::value_objects::user_id::UserId;
+
+use crate::auth::domain::user_repository::UserRepository;
 
 #[derive(Clone)]
 pub struct UserDeleter {
@@ -24,10 +26,11 @@ impl UserDeleter {
 mod tests {
     use super::*;
 
-    use crate::auth::domain::user::tests::UserIdMother;
     use crate::auth::domain::user_repository::tests::MockUserRepository;
     use mockall::predicate;
-    use shared::domain::base_errors::BaseRepositoryError;
+    use shared::domain::{
+        base_errors::BaseRepositoryError, value_objects::user_id::tests::UserIdMother,
+    };
 
     #[tokio::test]
     async fn should_return_error_when_user_not_found() {

@@ -41,13 +41,47 @@ impl MigrationTrait for Migration {
                     )
                     .to_owned(),
             )
-            .await
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Donas::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(Donas::Id).uuid().primary_key())
+                    .col(ColumnDef::new(Donas::Msg).string().not_null())
+                    .col(ColumnDef::new(Donas::Amount).decimal().not_null())
+                    .col(ColumnDef::new(Donas::Status).string().not_null())
+                    .col(ColumnDef::new(Donas::OptionMethod).string().not_null())
+                    .col(ColumnDef::new(Donas::UserId).string().not_null())
+                    .col(ColumnDef::new(Donas::SenderId).string().not_null())
+                    .col(
+                        ColumnDef::new(Donas::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Donas::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .drop_table(Table::drop().table(Users::Table).to_owned())
-            .await
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(Donas::Table).to_owned())
+            .await?;
+
+        Ok(())
     }
 }
 
@@ -62,6 +96,20 @@ enum Users {
     LastLogin,
     ProfilePicture,
     IsAdmin,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+enum Donas {
+    Table,
+    Id,
+    Msg,
+    Amount,
+    Status,
+    OptionMethod,
+    UserId,
+    SenderId,
     CreatedAt,
     UpdatedAt,
 }

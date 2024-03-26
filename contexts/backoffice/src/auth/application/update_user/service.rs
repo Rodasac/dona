@@ -1,11 +1,14 @@
 use std::{fs::File, sync::Arc};
 
-use shared::{check_file_extension, domain::storage::FileStorageRepository};
+use shared::{
+    check_file_extension,
+    domain::{storage::FileStorageRepository, value_objects::user_id::UserId},
+};
 
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
     user::{
-        User, UserFullName, UserId, UserIsAdmin, UserPassword, UserProfilePicture, UserUpdatedAt,
+        User, UserFullName, UserIsAdmin, UserPassword, UserProfilePicture, UserUpdatedAt,
         UserUsername,
     },
     user_repository::UserRepository,

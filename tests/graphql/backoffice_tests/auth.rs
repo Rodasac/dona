@@ -112,7 +112,7 @@ async fn test_backoffice_update_user() {
     db.execute_unprepared(
         format!(
             r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
             ).as_str()
     ).await.unwrap();
 
@@ -217,7 +217,7 @@ async fn test_backoffice_delete_user() {
     db.execute_unprepared(
         format!(
             r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
             ).as_str()
     ).await.unwrap();
 
@@ -285,7 +285,7 @@ async fn test_backoffice_find_user() {
     db.execute_unprepared(
         format!(
             r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
             ).as_str()
     ).await.unwrap();
 
@@ -358,7 +358,7 @@ async fn test_backoffice_find_users() {
     db.execute_unprepared(
         format!(
             r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+             user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
             ).as_str()
     ).await.unwrap();
 
@@ -458,7 +458,7 @@ async fn test_backoffice_login_and_logout() {
     db.execute_unprepared(
         format!(
             r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-             user.id(), user.username(), user.email(), hashed_password, user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+             user.id(), user.username(), user.email(), hashed_password, user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
             ).as_str()
     ).await.unwrap();
 

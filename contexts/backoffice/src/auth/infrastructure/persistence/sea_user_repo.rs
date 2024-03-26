@@ -2,13 +2,16 @@ use sea_orm::{entity::prelude::*, sea_query::OnConflict};
 use sea_orm::{DatabaseConnection, Set};
 use shared::domain::base_errors::BaseRepositoryError;
 use shared::domain::criteria::Criteria;
+use shared::domain::value_objects::user_id::UserId;
 use shared::infrastructure::criteria::sea_criteria_converter::{
     convert_criteria_cursor, sea_convert_criteria,
 };
 
-use crate::auth::domain::user::{UserIsAdmin, UserLastLogin, UserProfilePicture, UserUsername};
 use crate::auth::domain::{
-    user::{User, UserCreatedAt, UserEmail, UserFullName, UserId, UserPassword, UserUpdatedAt},
+    user::{
+        User, UserCreatedAt, UserEmail, UserFullName, UserIsAdmin, UserLastLogin, UserPassword,
+        UserProfilePicture, UserUpdatedAt, UserUsername,
+    },
     user_repository::UserRepository,
 };
 
@@ -167,7 +170,7 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                 user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+                 user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
@@ -197,7 +200,7 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
@@ -262,7 +265,7 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
+                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL".to_string()), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
@@ -296,7 +299,7 @@ mod tests {
                 user.email(),
                 user.password(),
                 user.full_name(),
-                user.profile_picture().unwrap_or("NULL"),
+                user.profile_picture().unwrap_or("NULL".to_string()),
                 user.is_admin(),
                 user.created_at(),
                 user.updated_at(),

@@ -1,31 +1,10 @@
 use std::{fmt::Display, sync::Arc};
 
 use serde::{Deserialize, Serialize};
-use shared::domain::{bus::event::Event, utils::is_uuid};
+use shared::domain::{bus::event::Event, value_objects::user_id::UserId};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use super::user_events::UserCreatedEvent;
-
-pub const ERR_INVALID_USER_ID: &str = "Invalid user id";
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct UserId(String);
-
-impl UserId {
-    pub fn new(value: String) -> Result<Self, String> {
-        if is_uuid(&value) {
-            Ok(UserId(value))
-        } else {
-            Err(ERR_INVALID_USER_ID.to_string())
-        }
-    }
-}
-
-impl Display for UserId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 pub const ERR_INVALID_USERNAME: &str = "Invalid username";
 
@@ -366,32 +345,32 @@ impl User {
         events
     }
 
-    pub fn id(&self) -> &str {
-        &self.id.0
+    pub fn id(&self) -> String {
+        self.id.to_string()
     }
 
-    pub fn username(&self) -> &str {
-        &self.username.0
+    pub fn username(&self) -> String {
+        self.username.to_string()
     }
 
-    pub fn email(&self) -> &str {
-        &self.email.0
+    pub fn email(&self) -> String {
+        self.email.to_string()
     }
 
-    pub fn password(&self) -> &str {
-        &self.password.0
+    pub fn password(&self) -> String {
+        self.password.to_string()
     }
 
-    pub fn full_name(&self) -> &str {
-        &self.full_name.0
+    pub fn full_name(&self) -> String {
+        self.full_name.to_string()
     }
 
     pub fn last_login(&self) -> Option<OffsetDateTime> {
         self.last_login.0
     }
 
-    pub fn profile_picture(&self) -> Option<&str> {
-        self.profile_picture.0.as_deref()
+    pub fn profile_picture(&self) -> Option<String> {
+        self.profile_picture.0.clone()
     }
 
     pub fn is_admin(&self) -> bool {
@@ -468,19 +447,9 @@ pub mod tests {
         },
         Fake,
     };
-    use shared::domain::utils::{new_uuid, MINIMUM_DATE_PERMITTED};
-
-    pub struct UserIdMother;
-
-    impl UserIdMother {
-        pub fn create(value: String) -> UserId {
-            UserId::new(value).unwrap()
-        }
-
-        pub fn random() -> UserId {
-            UserId::new(new_uuid()).unwrap()
-        }
-    }
+    use shared::domain::{
+        utils::MINIMUM_DATE_PERMITTED, value_objects::user_id::tests::UserIdMother,
+    };
 
     pub struct UserUsernameMother;
 

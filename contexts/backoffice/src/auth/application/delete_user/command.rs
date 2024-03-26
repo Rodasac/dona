@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
-use shared::domain::bus::command::{Command, CommandError, CommandHandler};
-
-use crate::auth::domain::user::UserId;
+use shared::domain::{
+    bus::command::{Command, CommandError, CommandHandler},
+    value_objects::user_id::UserId,
+};
 
 use super::service::UserDeleter;
 

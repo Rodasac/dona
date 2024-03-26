@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
-use shared::domain::bus::query::{Query, QueryError, QueryHandler, Response};
-
-use crate::auth::domain::user::UserId;
+use shared::domain::{
+    bus::query::{Query, QueryError, QueryHandler, Response},
+    value_objects::user_id::UserId,
+};
 
 use super::service::UserFinder;
 

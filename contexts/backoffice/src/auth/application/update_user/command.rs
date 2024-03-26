@@ -1,9 +1,11 @@
-use shared::domain::bus::command::{Command, CommandError, CommandHandler};
+use shared::domain::{
+    bus::command::{Command, CommandError, CommandHandler},
+    value_objects::user_id::UserId,
+};
 use std::fs::File;
 
 use crate::auth::domain::user::{
-    UserFullName, UserId, UserIsAdmin, UserPassword, UserProfilePicture, UserUpdatedAt,
-    UserUsername,
+    UserFullName, UserIsAdmin, UserPassword, UserProfilePicture, UserUpdatedAt, UserUsername,
 };
 
 use super::service::UpdateUser;

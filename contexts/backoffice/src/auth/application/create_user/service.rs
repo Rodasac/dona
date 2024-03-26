@@ -9,6 +9,7 @@ use shared::{
             Criteria,
         },
         storage::FileStorageRepository,
+        value_objects::user_id::UserId,
     },
     USER_STORAGE_MODEL,
 };
@@ -16,7 +17,7 @@ use shared::{
 use crate::auth::domain::{
     password_hasher::UserPasswordHasher,
     user::{
-        User, UserCreatedAt, UserEmail, UserFullName, UserId, UserIsAdmin, UserPassword,
+        User, UserCreatedAt, UserEmail, UserFullName, UserIsAdmin, UserPassword,
         UserProfilePicture, UserUpdatedAt, UserUsername,
     },
     user_repository::UserRepository,
@@ -151,14 +152,14 @@ mod tests {
     use mockall::predicate;
     use shared::domain::base_errors::BaseRepositoryError;
     use shared::domain::storage::tests::MockFileStorageRepository;
+    use shared::domain::value_objects::user_id::tests::UserIdMother;
     use uuid::Uuid;
 
     use crate::auth::domain::password_hasher::tests::MockUserPasswordHasher;
     use crate::auth::domain::password_hasher::HashError;
     use crate::auth::domain::user::tests::{
-        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIdMother, UserIsAdminMother,
-        UserMother, UserPasswordMother, UserProfilePictureMother, UserUpdatedAtMother,
-        UserUsernameMother,
+        UserCreatedAtMother, UserEmailMother, UserFullNameMother, UserIsAdminMother, UserMother,
+        UserPasswordMother, UserProfilePictureMother, UserUpdatedAtMother, UserUsernameMother,
     };
     use crate::auth::domain::user_repository::tests::MockUserRepository;
 

@@ -33,6 +33,7 @@ async-trait = "0.1.77"
 bytes = "1.5"
 lazy_static = "1.4.0"
 poem = {version = "2.0", features = ["redis-session", "csrf", "rustls", "acme", "yaml", "static-files", "test"]}
+rand = "0.8.5"
 redis = { version = "0.24.0", features = ["tokio-comp", "r2d2", "connection-manager"] } # the newer version of redis is not compatible with the current version of poem
 rust_decimal = "1.34"
 rust_decimal_macros = "1.34"
