@@ -122,19 +122,19 @@ mod tests {
     #[tokio::test]
     async fn should_fail_user_not_found() {
         let user = UserMother::random();
-        let id = user.id().clone();
+        let user_id = UserId::new(user.id().to_string()).unwrap();
         let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
         let profile_picture = UserProfilePictureMother::random();
         let profile_picture_file = None;
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
-        let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
+        let updated_at = UserUpdatedAtMother::random_after(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(id.clone()))
+            .with(predicate::eq(user_id.clone()))
             .times(1)
             .returning(move |_| Err(BaseRepositoryError::NotFound));
 
@@ -146,7 +146,7 @@ mod tests {
 
         let result = service
             .execute(
-                id,
+                user_id,
                 Some(username),
                 Some(password),
                 Some(fullname),
@@ -163,19 +163,19 @@ mod tests {
     #[tokio::test]
     async fn should_fail_password_hasher() {
         let user = UserMother::random();
-        let id = user.id().clone();
+        let user_id = UserId::new(user.id().to_string()).unwrap();
         let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
         let profile_picture = UserProfilePictureMother::random();
         let profile_picture_file = None;
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
-        let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
+        let updated_at = UserUpdatedAtMother::random_after(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(id.clone()))
+            .with(predicate::eq(user_id.clone()))
             .times(1)
             .returning(move |_| Ok(user.clone()));
 
@@ -194,7 +194,7 @@ mod tests {
 
         let result = service
             .execute(
-                id,
+                user_id,
                 Some(username),
                 Some(password),
                 Some(fullname),
@@ -211,7 +211,7 @@ mod tests {
     #[tokio::test]
     async fn should_fail_profile_image_file_save() {
         let user = UserMother::random();
-        let id = user.id().clone();
+        let user_id = UserId::new(user.id().to_string()).unwrap();
         let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
@@ -224,12 +224,12 @@ mod tests {
         let profile_picture_file = Some(image);
 
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
-        let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
+        let updated_at = UserUpdatedAtMother::random_after(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(id.clone()))
+            .with(predicate::eq(user_id.clone()))
             .times(1)
             .returning(move |_| Ok(user.clone()));
 
@@ -254,7 +254,7 @@ mod tests {
 
         let result = service
             .execute(
-                id,
+                user_id,
                 Some(username),
                 Some(password),
                 Some(fullname),
@@ -272,7 +272,7 @@ mod tests {
     #[tokio::test]
     async fn should_fail_user_update_repo() {
         let user = UserMother::random();
-        let id = user.id().clone();
+        let user_id = UserId::new(user.id().to_string()).unwrap();
         let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
@@ -285,12 +285,12 @@ mod tests {
         let profile_picture_file = Some(image);
 
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
-        let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
+        let updated_at = UserUpdatedAtMother::random_after(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(id.clone()))
+            .with(predicate::eq(user_id.clone()))
             .times(1)
             .returning(move |_| Ok(user.clone()));
 
@@ -320,7 +320,7 @@ mod tests {
 
         let result = service
             .execute(
-                id,
+                user_id,
                 Some(username),
                 Some(password),
                 Some(fullname),
@@ -338,7 +338,7 @@ mod tests {
     #[tokio::test]
     async fn should_update_user() {
         let user = UserMother::random();
-        let id = user.id().clone();
+        let user_id = UserId::new(user.id().to_string()).unwrap();
         let username = UserUsernameMother::random();
         let password = UserPasswordMother::random();
         let fullname = UserFullNameMother::random();
@@ -351,12 +351,12 @@ mod tests {
         let profile_picture_file = Some(image);
 
         let is_admin = UserIsAdminMother::inverted(user.is_admin());
-        let updated_at = UserUpdatedAtMother::random_after_updated(user.updated_at());
+        let updated_at = UserUpdatedAtMother::random_after(user.updated_at());
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(id.clone()))
+            .with(predicate::eq(user_id.clone()))
             .times(1)
             .returning(move |_| Ok(user.clone()));
 
@@ -383,7 +383,7 @@ mod tests {
 
         let result = service
             .execute(
-                id,
+                user_id,
                 Some(username),
                 Some(password),
                 Some(fullname),

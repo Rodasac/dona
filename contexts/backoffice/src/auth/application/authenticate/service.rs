@@ -130,7 +130,10 @@ mod tests {
         let user_auth =
             UserAuthenticator::new(Arc::new(user_repository), Arc::new(password_hasher));
         let result = user_auth
-            .execute(user.email().to_owned(), user_password.clone())
+            .execute(
+                UserEmail::new(user.email().to_owned()).unwrap(),
+                user_password.clone(),
+            )
             .await;
 
         assert!(result.is_err());
@@ -156,7 +159,10 @@ mod tests {
         let user_auth =
             UserAuthenticator::new(Arc::new(user_repository), Arc::new(password_hasher));
         let response = user_auth
-            .execute(user.email().to_owned(), user.password().to_owned())
+            .execute(
+                UserEmail::new(user.email().to_owned()).unwrap(),
+                UserPassword::new(user.password().to_owned()).unwrap(),
+            )
             .await;
 
         assert!(response.is_ok());

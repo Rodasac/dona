@@ -108,11 +108,11 @@ impl UserRepository for SeaUserRepository {
             email: Set(user.email().to_string()),
             password: Set(user.password().to_string()),
             full_name: Set(user.full_name().to_string()),
-            last_login: Set(user.last_login().value().map(|d| d.to_owned())),
-            profile_picture: Set(user.profile_picture().value().map(|p| p.to_owned())),
-            is_admin: Set(user.is_admin().value().to_owned()),
-            created_at: Set(user.created_at().value().to_owned()),
-            updated_at: Set(user.updated_at().value().to_owned()),
+            last_login: Set(user.last_login().map(|d| d.to_owned())),
+            profile_picture: Set(user.profile_picture().map(|p| p.to_owned())),
+            is_admin: Set(user.is_admin().to_owned()),
+            created_at: Set(user.created_at().to_owned()),
+            updated_at: Set(user.updated_at().to_owned()),
         };
 
         Entity::insert(user)
@@ -167,13 +167,15 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                 user.id().to_string(), user.username().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.profile_picture(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
+                 user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
         let repo = SeaUserRepository::new(db);
 
-        let user_result = repo.find_by_id(user.id().to_owned()).await;
+        let user_result = repo
+            .find_by_id(UserId::new(user.id().to_string()).unwrap())
+            .await;
 
         assert!(user_result.is_ok());
         assert_eq!(user_result.unwrap(), user);
@@ -195,7 +197,7 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                 user.id().to_string(), user.username().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.profile_picture(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
+                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
@@ -260,13 +262,15 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                 user.id().to_string(), user.username().to_string(), user.email().to_string(), user.password().to_string(), user.full_name().to_string(), user.profile_picture(), user.is_admin().value(), user.created_at().to_string(), user.updated_at().to_string()
+                user.id(), user.username(), user.email(), user.password(), user.full_name(), user.profile_picture().unwrap_or("NULL"), user.is_admin(), user.created_at(), user.updated_at()
                 ).as_str()
         ).await.unwrap();
 
         let repo = SeaUserRepository::new(db);
 
-        let delete_result = repo.delete(user.id().to_owned()).await;
+        let delete_result = repo
+            .delete(UserId::new(user.id().to_string()).unwrap())
+            .await;
 
         assert!(delete_result.is_ok());
     }
@@ -287,15 +291,15 @@ mod tests {
         db.execute_unprepared(
             format!(
                 r#"INSERT INTO users (id, username, email, password, full_name, last_login, profile_picture, is_admin, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', '{}', NULL, '{}', {}, '{}', '{}')"#,
-                user.id().to_string(),
-                user.username().to_string(),
-                user.email().to_string(),
-                user.password().to_string(),
-                user.full_name().to_string(),
-                user.profile_picture(),
-                user.is_admin().value(),
-                user.created_at().to_string(),
-                user.updated_at().to_string(),
+                user.id(),
+                user.username(),
+                user.email(),
+                user.password(),
+                user.full_name(),
+                user.profile_picture().unwrap_or("NULL"),
+                user.is_admin(),
+                user.created_at(),
+                user.updated_at(),
                 ).as_str()
         ).await.unwrap();
 

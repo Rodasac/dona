@@ -21,6 +21,14 @@ pub fn sanitize_string(input: &str) -> String {
         .to_string()
 }
 
+pub fn is_uuid(uuid: &str) -> bool {
+    uuid::Uuid::parse_str(uuid).is_ok()
+}
+
+pub fn new_uuid() -> String {
+    uuid::Uuid::now_v7().to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

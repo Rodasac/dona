@@ -1,9 +1,8 @@
 use std::{fmt::Display, sync::Arc};
 
 use serde::{Deserialize, Serialize};
-use shared::domain::bus::event::Event;
+use shared::domain::{bus::event::Event, utils::is_uuid};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
-use uuid::Uuid;
 
 use super::user_events::UserCreatedEvent;
 
@@ -14,10 +13,10 @@ pub struct UserId(String);
 
 impl UserId {
     pub fn new(value: String) -> Result<Self, String> {
-        let id = Uuid::parse_str(&value);
-        match id {
-            Ok(_) => Ok(UserId(value)),
-            Err(_) => Err(ERR_INVALID_USER_ID.to_string()),
+        if is_uuid(&value) {
+            Ok(UserId(value))
+        } else {
+            Err(ERR_INVALID_USER_ID.to_string())
         }
     }
 }
@@ -367,44 +366,52 @@ impl User {
         events
     }
 
-    pub fn id(&self) -> &UserId {
-        &self.id
+    pub fn id(&self) -> &str {
+        &self.id.0
     }
 
-    pub fn username(&self) -> &UserUsername {
-        &self.username
+    pub fn username(&self) -> &str {
+        &self.username.0
     }
 
-    pub fn email(&self) -> &UserEmail {
-        &self.email
+    pub fn email(&self) -> &str {
+        &self.email.0
     }
 
-    pub fn password(&self) -> &UserPassword {
-        &self.password
+    pub fn password(&self) -> &str {
+        &self.password.0
     }
 
-    pub fn full_name(&self) -> &UserFullName {
-        &self.full_name
+    pub fn full_name(&self) -> &str {
+        &self.full_name.0
     }
 
-    pub fn last_login(&self) -> &UserLastLogin {
-        &self.last_login
+    pub fn last_login(&self) -> Option<OffsetDateTime> {
+        self.last_login.0
     }
 
-    pub fn profile_picture(&self) -> &UserProfilePicture {
-        &self.profile_picture
+    pub fn profile_picture(&self) -> Option<&str> {
+        self.profile_picture.0.as_deref()
     }
 
-    pub fn is_admin(&self) -> &UserIsAdmin {
-        &self.is_admin
+    pub fn is_admin(&self) -> bool {
+        self.is_admin.0
     }
 
-    pub fn created_at(&self) -> &UserCreatedAt {
-        &self.created_at
+    pub fn created_at(&self) -> OffsetDateTime {
+        self.created_at.0
     }
 
-    pub fn updated_at(&self) -> &UserUpdatedAt {
-        &self.updated_at
+    pub fn created_at_string(&self) -> String {
+        self.created_at.to_string()
+    }
+
+    pub fn updated_at(&self) -> OffsetDateTime {
+        self.updated_at.0
+    }
+
+    pub fn updated_at_string(&self) -> String {
+        self.updated_at.to_string()
     }
 
     pub fn update(
@@ -461,7 +468,7 @@ pub mod tests {
         },
         Fake,
     };
-    use shared::domain::utils::MINIMUM_DATE_PERMITTED;
+    use shared::domain::utils::{new_uuid, MINIMUM_DATE_PERMITTED};
 
     pub struct UserIdMother;
 
@@ -471,7 +478,7 @@ pub mod tests {
         }
 
         pub fn random() -> UserId {
-            UserId::new(Uuid::now_v7().to_string()).unwrap()
+            UserId::new(new_uuid()).unwrap()
         }
     }
 
@@ -555,8 +562,8 @@ pub mod tests {
             UserIsAdmin::new(value)
         }
 
-        pub fn inverted(user_is_admin: &UserIsAdmin) -> UserIsAdmin {
-            UserIsAdmin::new(!user_is_admin.0)
+        pub fn inverted(user_is_admin: bool) -> UserIsAdmin {
+            UserIsAdmin::new(!user_is_admin)
         }
 
         pub fn random() -> UserIsAdmin {
@@ -584,7 +591,7 @@ pub mod tests {
             UserUpdatedAt::new(value).unwrap()
         }
 
-        fn random_after(date: OffsetDateTime) -> UserUpdatedAt {
+        pub fn random_after(date: OffsetDateTime) -> UserUpdatedAt {
             let updated_at: OffsetDateTime = DateTimeAfter(date).fake();
             UserUpdatedAt::new(updated_at.format(&Rfc3339).unwrap()).unwrap()
         }

@@ -27,10 +27,10 @@ impl UserFinder {
             username: user.username().to_string(),
             email: user.email().to_string(),
             full_name: user.full_name().to_string(),
-            profile_picture: user.profile_picture().value().map(|v| v.to_owned()),
-            is_admin: user.is_admin().value(),
-            created_at: user.created_at().to_string(),
-            updated_at: user.updated_at().to_string(),
+            profile_picture: user.profile_picture().map(|v| v.to_owned()),
+            is_admin: user.is_admin(),
+            created_at: user.created_at_string(),
+            updated_at: user.updated_at_string(),
         })
     }
 }
@@ -64,26 +64,27 @@ mod tests {
     #[tokio::test]
     async fn should_return_user_response() {
         let user = UserMother::random();
+        let user_id = UserId::new(user.id().to_owned()).unwrap();
 
         let mut user_repository = MockUserRepository::new();
         user_repository
             .expect_find_by_id()
-            .with(predicate::eq(user.id().to_owned()))
+            .with(predicate::eq(user_id.clone()))
             .return_const(Ok(user.clone()));
 
         let user_finder = UserFinder::new(Arc::new(user_repository));
-        let response = user_finder.execute(user.id().to_owned()).await.unwrap();
+        let response = user_finder.execute(user_id).await.unwrap();
 
-        assert_eq!(response.id, user.id().to_string());
-        assert_eq!(response.username, user.username().to_string());
-        assert_eq!(response.email, user.email().to_string());
-        assert_eq!(response.full_name, user.full_name().to_string());
+        assert_eq!(response.id, user.id());
+        assert_eq!(response.username, user.username());
+        assert_eq!(response.email, user.email());
+        assert_eq!(response.full_name, user.full_name());
         assert_eq!(
             response.profile_picture,
-            user.profile_picture().value().map(|v| v.to_owned())
+            user.profile_picture().map(|v| v.to_owned())
         );
-        assert_eq!(response.is_admin, user.is_admin().value());
-        assert_eq!(response.created_at, user.created_at().to_string());
-        assert_eq!(response.updated_at, user.updated_at().to_string());
+        assert_eq!(response.is_admin, user.is_admin());
+        assert_eq!(response.created_at, user.created_at_string());
+        assert_eq!(response.updated_at, user.updated_at_string());
     }
 }

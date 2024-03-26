@@ -308,16 +308,16 @@ mod tests {
 
         let result = create_user
             .execute(
-                user.id().clone(),
-                user.username().clone(),
-                user.email().clone(),
-                user.password().clone(),
-                user.full_name().clone(),
-                user.profile_picture().clone(),
+                UserId::new(user.id().to_string()).unwrap(),
+                UserUsername::new(user.username().to_string()).unwrap(),
+                UserEmail::new(user.email().to_string()).unwrap(),
+                UserPassword::new(user.password().to_string()).unwrap(),
+                UserFullName::new(user.full_name().to_string()).unwrap(),
+                UserProfilePicture::new(user.profile_picture().map(|v| v.to_string())).unwrap(),
                 Some(image),
-                user.is_admin().clone(),
-                user.created_at().clone(),
-                user.updated_at().clone(),
+                UserIsAdmin::new(user.is_admin()),
+                UserCreatedAt::from_offset(user.created_at().clone()),
+                UserUpdatedAt::from_offset(user.updated_at().clone()),
             )
             .await;
 
@@ -360,15 +360,15 @@ mod tests {
         let result = create_user
             .execute(
                 UserIdMother::random(),
-                user.username().clone(),
-                user.email().clone(),
-                user.password().clone(),
-                user.full_name().clone(),
-                user.profile_picture().clone(),
+                UserUsername::new(user.username().to_string()).unwrap(),
+                UserEmail::new(user.email().to_string()).unwrap(),
+                UserPassword::new(user.password().to_string()).unwrap(),
+                UserFullName::new(user.full_name().to_string()).unwrap(),
+                UserProfilePicture::new(user.profile_picture().map(|v| v.to_string())).unwrap(),
                 Some(image),
-                user.is_admin().clone(),
-                user.created_at().clone(),
-                user.updated_at().clone(),
+                UserIsAdmin::new(user.is_admin()),
+                UserCreatedAt::from_offset(user.created_at().clone()),
+                UserUpdatedAt::from_offset(user.updated_at().clone()),
             )
             .await;
 
