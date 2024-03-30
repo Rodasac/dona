@@ -78,6 +78,7 @@ pub const ERR_INVALID_DONA_STATUS: &str = "Invalid Dona Status";
 pub enum DonaStatus {
     Pending,
     Confirmed,
+    Rejected,
 }
 
 impl DonaStatus {
@@ -85,6 +86,7 @@ impl DonaStatus {
         match value.as_str() {
             "pending" => Ok(Self::Pending),
             "confirmed" => Ok(Self::Confirmed),
+            "rejected" => Ok(Self::Rejected),
             _ => Err(ERR_INVALID_DONA_STATUS.to_string()),
         }
     }
@@ -95,6 +97,7 @@ impl Display for DonaStatus {
         match self {
             Self::Pending => write!(f, "pending"),
             Self::Confirmed => write!(f, "confirmed"),
+            Self::Rejected => write!(f, "rejected"),
         }
     }
 }
