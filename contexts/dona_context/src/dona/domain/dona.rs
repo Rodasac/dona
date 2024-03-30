@@ -7,7 +7,10 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::shared::domain::dona::DonaOptionMethod;
 
-use super::{dona_confirmed_event::DonaConfirmedEvent, dona_created_event::DonaCreatedEvent};
+use super::{
+    dona_confirmed_event::DonaConfirmedEvent, dona_created_event::DonaCreatedEvent,
+    dona_rejected_event::DonaRejectedEvent,
+};
 
 pub const ERR_INVALID_DONA_ID: &str = "Invalid Dona ID";
 
@@ -253,6 +256,15 @@ impl Dona {
         self.updated_at = DonaUpdatedAt::new(ocurred_at).unwrap();
 
         let event = DonaConfirmedEvent::new(self.id.to_string(), self.updated_at.to_string());
+
+        self.events.push(Arc::new(event));
+    }
+
+    pub fn reject(&mut self, ocurred_at: OffsetDateTime) {
+        self.status = DonaStatus::Rejected;
+        self.updated_at = DonaUpdatedAt::new(ocurred_at).unwrap();
+
+        let event = DonaRejectedEvent::new(self.id.to_string(), self.updated_at.to_string());
 
         self.events.push(Arc::new(event));
     }
