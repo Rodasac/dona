@@ -163,16 +163,14 @@ impl UserPaymentMethod {
             updated_at,
         )?;
 
-        method
-            .events
-            .push(Arc::new(UserPaymentMethodCreatedEvent::new(
-                method.id().to_string(),
-                method.user_id().to_string(),
-                method.payment_method().to_string(),
-                method.instructions().to_string(),
-                method.created_at().to_string(),
-                method.updated_at().to_string(),
-            )));
+        method.record(Arc::new(UserPaymentMethodCreatedEvent::new(
+            method.id().to_string(),
+            method.user_id().to_string(),
+            method.payment_method().to_string(),
+            method.instructions().to_string(),
+            method.created_at().to_string(),
+            method.updated_at().to_string(),
+        )));
 
         Ok(method)
     }
@@ -185,17 +183,26 @@ impl UserPaymentMethod {
         self.instructions = UserPaymentMethodInstructions::new(instructions)?;
         self.updated_at = UserPaymentMethodUpdatedAt::new(updated_at)?;
 
-        self.events
-            .push(Arc::new(UserPaymentMethodInstructionsUpdatedEvent::new(
-                self.id().to_string(),
-                self.user_id().to_string(),
-                self.payment_method().to_string(),
-                self.instructions().to_string(),
-                self.created_at().to_string(),
-                self.updated_at().to_string(),
-            )));
+        self.record(Arc::new(UserPaymentMethodInstructionsUpdatedEvent::new(
+            self.id().to_string(),
+            self.user_id().to_string(),
+            self.payment_method().to_string(),
+            self.instructions().to_string(),
+            self.created_at().to_string(),
+            self.updated_at().to_string(),
+        )));
 
         Ok(())
+    }
+
+    pub fn record(&mut self, event: Arc<dyn Event>) {
+        self.events.push(event);
+    }
+
+    pub fn pull_events(&mut self) -> Vec<Arc<dyn Event>> {
+        let events = self.events.clone();
+        self.events = vec![];
+        events
     }
 
     pub fn id(&self) -> String {

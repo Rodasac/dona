@@ -246,7 +246,7 @@ impl Dona {
             created_at.to_string(),
             updated_at.to_string(),
         );
-        dona.events.push(Arc::new(event));
+        dona.record(Arc::new(event));
 
         Ok(dona)
     }
@@ -257,7 +257,7 @@ impl Dona {
 
         let event = DonaConfirmedEvent::new(self.id.to_string(), self.updated_at.to_string());
 
-        self.events.push(Arc::new(event));
+        self.record(Arc::new(event));
     }
 
     pub fn reject(&mut self, ocurred_at: OffsetDateTime) {
@@ -266,7 +266,7 @@ impl Dona {
 
         let event = DonaRejectedEvent::new(self.id.to_string(), self.updated_at.to_string());
 
-        self.events.push(Arc::new(event));
+        self.record(Arc::new(event));
     }
 
     pub fn record(&mut self, event: Arc<dyn Event>) {

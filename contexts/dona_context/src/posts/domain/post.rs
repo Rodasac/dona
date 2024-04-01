@@ -213,7 +213,7 @@ impl Post {
             post.updated_at_str(),
         );
 
-        post.events.push(Arc::new(event));
+        post.record(Arc::new(event));
 
         Ok(post)
     }
@@ -226,7 +226,7 @@ impl Post {
         self.content = PostContent::new(content)?;
         self.updated_at = PostUpdatedAt::new(updated_at)?;
 
-        self.events.push(Arc::new(PostContentUpdatedEvent::new(
+        self.record(Arc::new(PostContentUpdatedEvent::new(
             self.id(),
             self.user_id(),
             self.content(),
@@ -244,7 +244,7 @@ impl Post {
         self.picture = picture.map(PostPicture::new).transpose()?;
         self.updated_at = PostUpdatedAt::new(updated_at)?;
 
-        self.events.push(Arc::new(PostPictureUpdatedEvent::new(
+        self.record(Arc::new(PostPictureUpdatedEvent::new(
             self.id(),
             self.user_id(),
             self.picture(),
@@ -262,7 +262,7 @@ impl Post {
         self.is_nsfw = PostIsNSFW::new(is_nsfw);
         self.updated_at = PostUpdatedAt::new(updated_at)?;
 
-        self.events.push(Arc::new(PostIsNsfwUpdatedEvent::new(
+        self.record(Arc::new(PostIsNsfwUpdatedEvent::new(
             self.id(),
             self.user_id(),
             self.is_nsfw(),
@@ -270,6 +270,16 @@ impl Post {
         )));
 
         Ok(())
+    }
+
+    pub fn record(&mut self, event: Arc<dyn Event>) {
+        self.events.push(event);
+    }
+
+    pub fn pull_events(&mut self) -> Vec<Arc<dyn Event>> {
+        let events = self.events.clone();
+        self.events = vec![];
+        events
     }
 
     pub fn id(&self) -> String {
