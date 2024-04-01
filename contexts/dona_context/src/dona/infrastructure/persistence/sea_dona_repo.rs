@@ -18,8 +18,8 @@ pub struct Model {
     pub amount: Decimal,
     pub status: String,
     pub option_method: String,
-    pub user_id: String,
-    pub sender_id: String,
+    pub user_id: Uuid,
+    pub sender_id: Uuid,
     pub created_at: TimeDateTimeWithTimeZone,
     pub updated_at: TimeDateTimeWithTimeZone,
 }
@@ -36,8 +36,8 @@ fn from_model(model: Model) -> Dona {
         model.amount,
         model.status,
         model.option_method,
-        model.user_id,
-        model.sender_id,
+        model.user_id.to_string(),
+        model.sender_id.to_string(),
         model.created_at,
         model.updated_at,
     )
@@ -112,8 +112,8 @@ impl DonaRepository for SeaDonaRepo {
             amount: Set(dona.amount()),
             status: Set(dona.status()),
             option_method: Set(dona.method()),
-            user_id: Set(dona.user_id()),
-            sender_id: Set(dona.sender_id()),
+            user_id: Set(Uuid::parse_str(&dona.user_id()).unwrap()),
+            sender_id: Set(Uuid::parse_str(&dona.sender_id()).unwrap()),
             created_at: Set(dona.created_at()),
             updated_at: Set(dona.updated_at()),
         };

@@ -53,8 +53,8 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Donas::Amount).decimal().not_null())
                     .col(ColumnDef::new(Donas::Status).string().not_null())
                     .col(ColumnDef::new(Donas::OptionMethod).string().not_null())
-                    .col(ColumnDef::new(Donas::UserId).string().not_null())
-                    .col(ColumnDef::new(Donas::SenderId).string().not_null())
+                    .col(ColumnDef::new(Donas::UserId).uuid().not_null())
+                    .col(ColumnDef::new(Donas::SenderId).uuid().not_null())
                     .col(
                         ColumnDef::new(Donas::CreatedAt)
                             .timestamp_with_time_zone()
@@ -69,16 +69,84 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        manager
+            .create_table(
+                Table::create()
+                    .table(UserPaymentMethods::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(UserPaymentMethods::Id).uuid().primary_key())
+                    .col(ColumnDef::new(UserPaymentMethods::UserId).uuid().not_null())
+                    .col(
+                        ColumnDef::new(UserPaymentMethods::PaymentMethod)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(UserPaymentMethods::Instructions)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(UserPaymentMethods::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(UserPaymentMethods::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Posts::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(Posts::Id).uuid().primary_key())
+                    .col(ColumnDef::new(Posts::UserId).uuid().not_null())
+                    .col(ColumnDef::new(Posts::Content).string().not_null())
+                    .col(ColumnDef::new(Posts::PostPicture).string())
+                    .col(ColumnDef::new(Posts::IsNSFW).boolean().not_null())
+                    .col(
+                        ColumnDef::new(Posts::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Posts::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Users::Table).to_owned())
+            .drop_table(Table::drop().if_exists().table(Users::Table).to_owned())
             .await?;
 
         manager
-            .drop_table(Table::drop().table(Donas::Table).to_owned())
+            .drop_table(Table::drop().if_exists().table(Donas::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(UserPaymentMethods::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_table(Table::drop().if_exists().table(Posts::Table).to_owned())
             .await?;
 
         Ok(())
@@ -110,6 +178,29 @@ enum Donas {
     OptionMethod,
     UserId,
     SenderId,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+enum UserPaymentMethods {
+    Table,
+    Id,
+    UserId,
+    PaymentMethod,
+    Instructions,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+enum Posts {
+    Table,
+    Id,
+    UserId,
+    Content,
+    PostPicture,
+    IsNSFW,
     CreatedAt,
     UpdatedAt,
 }

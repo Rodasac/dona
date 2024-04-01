@@ -48,10 +48,14 @@ pub mod tests {
     pub struct DonaOptionMethodMother;
 
     impl DonaOptionMethodMother {
+        pub fn random() -> DonaOptionMethod {
+            DonaOptionMethodFaker.fake()
+        }
+
         pub fn create(value: Option<String>) -> DonaOptionMethod {
             match value {
                 Some(value) => DonaOptionMethod::new(value).unwrap(),
-                None => DonaOptionMethodFaker.fake(),
+                None => Self::random(),
             }
         }
     }
