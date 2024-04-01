@@ -316,15 +316,16 @@ pub mod tests {
             created_at: Option<OffsetDateTime>,
             updated_at: Option<OffsetDateTime>,
         ) -> UserPaymentMethod {
-            UserPaymentMethod::new(
-                id.unwrap_or_else(|| new_uuid()),
-                user_id.unwrap_or_else(|| UserIdMother::random().to_string()),
-                payment_method.unwrap_or_else(|| DonaOptionMethodMother::random().to_string()),
-                instructions.unwrap_or_else(|| Sentence(1..10).fake()),
-                created_at.unwrap_or_else(|| DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake()),
-                updated_at.unwrap_or_else(|| DateTimeAfter(*MINIMUM_DATE_PERMITTED).fake()),
-            )
-            .unwrap()
+            UserPaymentMethod {
+                id: UserPaymentMethodIdMother::create(id),
+                user_id: UserIdMother::create(user_id),
+                payment_method: DonaOptionMethodMother::create(payment_method),
+                instructions: UserPaymentMethodInstructionsMother::create(instructions),
+                created_at: UserPaymentMethodCreatedAtMother::create(created_at),
+                updated_at: UserPaymentMethodUpdatedAtMother::create(updated_at),
+
+                events: vec![],
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 pub mod dona;
+pub mod posts;
 pub(crate) mod shared;
 pub mod user_payment_method;
 

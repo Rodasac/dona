@@ -6,19 +6,18 @@ use shared::infrastructure::criteria::sea_criteria_converter::{
     convert_criteria_cursor, sea_convert_criteria,
 };
 
-use crate::user_payment_method::domain::user_payment_method::{
-    UserPaymentMethod, UserPaymentMethodId,
-};
-use crate::user_payment_method::domain::user_payment_method_repository::UserPaymentMethodRepository;
+use crate::posts::domain::post::{Post, PostId};
+use crate::posts::domain::post_repository::PostRepository;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "user_payment_methods")]
+#[sea_orm(table_name = "posts")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
     pub user_id: Uuid,
-    pub payment_method: String,
-    pub instructions: String,
+    pub content: String,
+    pub post_picture: Option<String>,
+    pub is_nsfw: bool,
     pub created_at: TimeDateTimeWithTimeZone,
     pub updated_at: TimeDateTimeWithTimeZone,
 }
@@ -28,34 +27,32 @@ pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
 
-fn from_model(model: Model) -> UserPaymentMethod {
-    UserPaymentMethod::new(
+fn from_model(model: Model) -> Post {
+    Post::new(
         model.id.to_string(),
         model.user_id.to_string(),
-        model.payment_method,
-        model.instructions,
+        model.content,
+        model.post_picture,
+        model.is_nsfw,
         model.created_at,
         model.updated_at,
     )
     .unwrap()
 }
 
-pub struct SeaUserPaymentMethodRepo {
+pub struct SeaPostRepo {
     db: DatabaseConnection,
 }
 
-impl SeaUserPaymentMethodRepo {
+impl SeaPostRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait::async_trait]
-impl UserPaymentMethodRepository for SeaUserPaymentMethodRepo {
-    async fn find_by_id(
-        &self,
-        id: UserPaymentMethodId,
-    ) -> Result<UserPaymentMethod, BaseRepositoryError> {
+impl PostRepository for SeaPostRepo {
+    async fn find_by_id(&self, id: PostId) -> Result<Post, BaseRepositoryError> {
         Entity::find_by_id(Uuid::parse_str(&id.to_string()).unwrap())
             .one(&self.db)
             .await
@@ -64,67 +61,55 @@ impl UserPaymentMethodRepository for SeaUserPaymentMethodRepo {
             .ok_or(BaseRepositoryError::NotFound)
     }
 
-    async fn find_by_criteria(
-        &self,
-        criteria: Criteria,
-    ) -> Result<Vec<UserPaymentMethod>, BaseRepositoryError> {
+    async fn find_by_criteria(&self, criteria: Criteria) -> Result<Vec<Post>, BaseRepositoryError> {
         let mut query = Entity::find();
         let query = sea_convert_criteria::<Column, Entity>(&mut query, criteria.clone())
             .map_err(|e| BaseRepositoryError::CriteriaCoverterError(e.to_string()))?;
         let mut cursor_query = query.cursor_by(Column::CreatedAt);
         let query = convert_criteria_cursor::<Column, Model>(criteria.cursor(), &mut cursor_query);
 
-        let user_payment_methods = query
+        let posts = query
             .all(&self.db)
             .await
-            .map(|u| {
-                u.into_iter()
-                    .map(from_model)
-                    .collect::<Vec<UserPaymentMethod>>()
-            })
+            .map(|u| u.into_iter().map(from_model).collect::<Vec<Post>>())
             .map_err(|e| BaseRepositoryError::UnexpectedError(e.to_string()))?;
 
-        Ok(user_payment_methods)
+        Ok(posts)
     }
 
-    async fn find_all(&self) -> Result<Vec<UserPaymentMethod>, BaseRepositoryError> {
-        let user_payment_methods = Entity::find()
+    async fn find_all(&self) -> Result<Vec<Post>, BaseRepositoryError> {
+        let posts = Entity::find()
             .all(&self.db)
             .await
-            .map(|u| {
-                u.into_iter()
-                    .map(from_model)
-                    .collect::<Vec<UserPaymentMethod>>()
-            })
+            .map(|u| u.into_iter().map(from_model).collect::<Vec<Post>>())
             .map_err(|e| BaseRepositoryError::UnexpectedError(e.to_string()))?;
 
-        Ok(user_payment_methods)
+        Ok(posts)
     }
 
-    async fn save(
-        &self,
-        user_payment_method: &UserPaymentMethod,
-    ) -> Result<(), BaseRepositoryError> {
+    async fn save(&self, post: &Post) -> Result<(), BaseRepositoryError> {
         let on_conflict = OnConflict::column(Column::Id)
             .update_columns(vec![
                 Column::UserId,
-                Column::PaymentMethod,
-                Column::Instructions,
+                Column::Content,
+                Column::PostPicture,
+                Column::IsNsfw,
                 Column::CreatedAt,
                 Column::UpdatedAt,
             ])
             .to_owned();
 
-        let user_payment_method = ActiveModel {
-            id: Set(Uuid::parse_str(&user_payment_method.id()).unwrap()),
-            user_id: Set(Uuid::parse_str(&user_payment_method.user_id()).unwrap()),
-            payment_method: Set(user_payment_method.payment_method()),
-            instructions: Set(user_payment_method.instructions()),
-            created_at: Set(user_payment_method.created_at()),
-            updated_at: Set(user_payment_method.updated_at()),
+        let post = ActiveModel {
+            id: Set(Uuid::parse_str(&post.id()).unwrap()),
+            user_id: Set(Uuid::parse_str(&post.user_id()).unwrap()),
+            content: Set(post.content()),
+            post_picture: Set(post.picture()),
+            is_nsfw: Set(post.is_nsfw()),
+            created_at: Set(post.created_at()),
+            updated_at: Set(post.updated_at()),
         };
 
-        Entity::insert(user_payment_method)
+        Entity::insert(post)
             .on_conflict(on_conflict)
             .exec(&self.db)
             .await
@@ -133,7 +118,7 @@ impl UserPaymentMethodRepository for SeaUserPaymentMethodRepo {
         Ok(())
     }
 
-    async fn delete(&self, id: UserPaymentMethodId) -> Result<(), BaseRepositoryError> {
+    async fn delete(&self, id: PostId) -> Result<(), BaseRepositoryError> {
         Entity::delete_by_id(Uuid::parse_str(&id.to_string()).unwrap())
             .exec(&self.db)
             .await
@@ -152,10 +137,7 @@ mod tests {
         filter::{Filter, FilterField, FilterOperator, FilterValue},
     };
 
-    use crate::{
-        test_utils::get_db_image,
-        user_payment_method::domain::user_payment_method::tests::UserPaymentMethodMother,
-    };
+    use crate::{posts::domain::post::tests::PostMother, test_utils::get_db_image};
 
     use super::*;
 
@@ -170,39 +152,34 @@ mod tests {
             .unwrap();
         Migrator::up(&db, None).await.unwrap();
 
-        let repo = SeaUserPaymentMethodRepo::new(db);
+        let repo = SeaPostRepo::new(db);
 
-        let method = UserPaymentMethodMother::random();
+        let post = PostMother::random();
 
         // Save
-        repo.save(&method)
-            .await
-            .expect("Error saving user payment method");
+        repo.save(&post).await.expect("Error saving post");
 
-        let method_id = UserPaymentMethodId::new(method.id()).unwrap();
+        let post_id = PostId::new(post.id()).unwrap();
 
         // Find by id
-        let found_method = repo
-            .find_by_id(method_id.clone())
+        let found_post = repo
+            .find_by_id(post_id.clone())
             .await
-            .expect("Error finding user payment method");
-
-        assert_eq!(method, found_method);
+            .expect("Error finding post by id");
+        assert_eq!(found_post, post);
 
         // Find all
-        let methods = repo
-            .find_all()
-            .await
-            .expect("Error finding all user payment methods");
-        assert_eq!(1, methods.len());
-        assert_eq!(method, methods.first().unwrap().clone());
+        let posts = repo.find_all().await.expect("Error finding all posts");
+
+        assert_eq!(posts.len(), 1);
+        assert_eq!(posts[0], post);
 
         // Find by criteria
         let criteria = Criteria::new(
             vec![Filter::new(
                 FilterField::try_from("user_id".to_string()).unwrap(),
                 FilterOperator::Equal,
-                FilterValue::try_from(method.user_id()).unwrap(),
+                FilterValue::try_from(post.user_id()).unwrap(),
             )],
             None,
             Some(Cursor::new(
@@ -212,19 +189,21 @@ mod tests {
                 None,
             )),
         );
-        let methods = repo
+        let posts = repo
             .find_by_criteria(criteria)
             .await
-            .expect("Error finding user payment methods by criteria");
-        assert_eq!(1, methods.len());
-        assert_eq!(method, methods.first().unwrap().clone());
+            .expect("Error finding post by criteria");
+
+        assert_eq!(posts.len(), 1);
+        assert_eq!(posts[0], post);
 
         // Delete
-        repo.delete(method_id.clone())
+        repo.delete(post_id)
             .await
-            .expect("Error deleting user payment method");
-        repo.find_by_id(method_id)
-            .await
-            .expect_err("Error deleting user payment method");
+            .expect("Error deleting post by id");
+
+        let posts = repo.find_all().await.expect("Error finding all posts");
+
+        assert_eq!(posts.len(), 0);
     }
 }

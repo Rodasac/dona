@@ -453,18 +453,19 @@ pub mod tests {
             created_at: Option<OffsetDateTime>,
             updated_at: Option<OffsetDateTime>,
         ) -> Dona {
-            Dona::new(
-                DonaIdMother::create(id).to_string(),
-                DonaMsgMother::create(msg).to_string(),
-                DonaAmountMother::create(amount).0,
-                DonaStatusMother::create(status).to_string(),
-                DonaOptionMethodMother::create(method).to_string(),
-                UserIdMother::create(user_id).to_string(),
-                UserIdMother::create(sender_id).to_string(),
-                DonaCreatedAtMother::create(created_at).0,
-                DonaUpdatedAtMother::create(updated_at).0,
-            )
-            .unwrap()
+            Dona {
+                id: DonaIdMother::create(id),
+                msg: DonaMsgMother::create(msg),
+                amount: DonaAmountMother::create(amount),
+                status: DonaStatusMother::create(status),
+                method: DonaOptionMethodMother::create(method),
+                user_id: UserIdMother::create(user_id),
+                sender_id: UserIdMother::create(sender_id),
+                created_at: DonaCreatedAtMother::create(created_at),
+                updated_at: DonaUpdatedAtMother::create(updated_at),
+
+                events: vec![],
+            }
         }
 
         pub fn random() -> Dona {
