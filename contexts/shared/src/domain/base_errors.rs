@@ -33,3 +33,9 @@ impl Display for BaseRepositoryError {
         write!(f, "{}", self.message())
     }
 }
+
+impl From<BaseRepositoryError> for String {
+    fn from(error: BaseRepositoryError) -> Self {
+        error.to_string()
+    }
+}
