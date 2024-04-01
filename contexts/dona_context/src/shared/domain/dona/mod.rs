@@ -11,8 +11,8 @@ pub enum DonaOptionMethod {
 impl DonaOptionMethod {
     pub fn new(value: String) -> Result<Self, String> {
         match value.as_str() {
-            "manual" => Ok(Self::Manual),
-            "paypal" => Ok(Self::Paypal),
+            "MANUAL" => Ok(Self::Manual),
+            "PAYPAL" => Ok(Self::Paypal),
             _ => Err(ERR_INVALID_DONA_OPTION_METHOD.to_string()),
         }
     }
@@ -21,8 +21,8 @@ impl DonaOptionMethod {
 impl Display for DonaOptionMethod {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Manual => write!(f, "manual"),
-            Self::Paypal => write!(f, "paypal"),
+            Self::Manual => write!(f, "MANUAL"),
+            Self::Paypal => write!(f, "PAYPAL"),
         }
     }
 }
