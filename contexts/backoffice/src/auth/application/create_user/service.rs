@@ -3,6 +3,7 @@ use std::{fs::File, sync::Arc};
 use shared::{
     check_file_extension,
     domain::{
+        bus::event::EventBus,
         criteria::{
             cursor::{Cursor, FirstField},
             filter::{Filter, FilterField, FilterOperator, FilterValue},
@@ -28,6 +29,7 @@ pub struct CreateUser {
     user_repository: Arc<dyn UserRepository>,
     password_hasher: Arc<dyn UserPasswordHasher>,
     storage_repository: Arc<dyn FileStorageRepository>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl CreateUser {
@@ -35,11 +37,13 @@ impl CreateUser {
         user_repository: Arc<dyn UserRepository>,
         password_hasher: Arc<dyn UserPasswordHasher>,
         storage_repository: Arc<dyn FileStorageRepository>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             user_repository,
             password_hasher,
             storage_repository,
+            event_bus,
         }
     }
 
@@ -122,7 +126,7 @@ impl CreateUser {
                 .await?;
         }
 
-        let user = User::new_user(
+        let mut user = User::new_user(
             id,
             username,
             email,
@@ -139,6 +143,11 @@ impl CreateUser {
             .await
             .map_err(|e| e.to_string())?;
 
+        self.event_bus
+            .publish(user.pull_events())
+            .await
+            .map_err(|e| e.to_string())?;
+
         Ok(())
     }
 }
@@ -151,6 +160,7 @@ mod tests {
 
     use mockall::predicate;
     use shared::domain::base_errors::BaseRepositoryError;
+    use shared::domain::bus::event::tests::MockEventBus;
     use shared::domain::storage::tests::MockFileStorageRepository;
     use shared::domain::value_objects::user_id::tests::UserIdMother;
     use uuid::Uuid;
@@ -192,10 +202,14 @@ mod tests {
             .times(1)
             .return_const(Ok("profile_picture".to_string()));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());
@@ -248,10 +262,14 @@ mod tests {
         let mut storate_repository = MockFileStorageRepository::new();
         storate_repository.expect_save().times(0);
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());
@@ -296,10 +314,14 @@ mod tests {
         let mut storate_repository = MockFileStorageRepository::new();
         storate_repository.expect_save().times(0);
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());
@@ -347,10 +369,14 @@ mod tests {
         let mut storate_repository = MockFileStorageRepository::new();
         storate_repository.expect_save().times(0);
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());
@@ -403,10 +429,14 @@ mod tests {
             .times(1)
             .return_const(Err("Error".to_string()));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());
@@ -459,10 +489,14 @@ mod tests {
             .times(1)
             .return_const(Ok("profile_picture".to_string()));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(1).return_const(Ok(()));
+
         let create_user = CreateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storate_repository),
+            Arc::new(event_bus),
         );
 
         let file_rng_path = format!("{}.jpg", Uuid::new_v4());

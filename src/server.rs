@@ -16,6 +16,7 @@ use poem::{get, handler, EndpointExt, IntoResponse, Route, Server};
 use redis::Client as RedisClient;
 use sea_orm::prelude::*;
 use shared::infrastructure::bus::command::InMemoryCommandBus;
+use shared::infrastructure::bus::event::InMemoryEventBus;
 use shared::infrastructure::bus::query::InMemoryQueryBus;
 
 #[handler]
@@ -45,7 +46,11 @@ async fn index(
 
     let mut command_bus = InMemoryCommandBus::default();
     let mut query_bus = InMemoryQueryBus::default();
-    backoffice_app_di(&mut command_bus, &mut query_bus, &db);
+    let event_bus = InMemoryEventBus::default();
+    // When we have the event handlers do the di here separately
+    let event_bus = Arc::new(event_bus);
+
+    backoffice_app_di(&mut command_bus, &mut query_bus, event_bus.clone(), &db);
     security_app_di(&mut command_bus, &redis);
 
     let command_bus: CommandBusType = Arc::new(command_bus);

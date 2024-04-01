@@ -2,7 +2,9 @@ use std::{fs::File, sync::Arc};
 
 use shared::{
     check_file_extension,
-    domain::{storage::FileStorageRepository, value_objects::user_id::UserId},
+    domain::{
+        bus::event::EventBus, storage::FileStorageRepository, value_objects::user_id::UserId,
+    },
 };
 
 use crate::auth::domain::{
@@ -19,6 +21,7 @@ pub struct UpdateUser {
     user_repository: Arc<dyn UserRepository>,
     password_hasher: Arc<dyn UserPasswordHasher>,
     storage_repository: Arc<dyn FileStorageRepository>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl UpdateUser {
@@ -26,11 +29,13 @@ impl UpdateUser {
         user_repository: Arc<dyn UserRepository>,
         password_hasher: Arc<dyn UserPasswordHasher>,
         storage_repository: Arc<dyn FileStorageRepository>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             user_repository,
             password_hasher,
             storage_repository,
+            event_bus,
         }
     }
 
@@ -99,6 +104,8 @@ impl UpdateUser {
             .await
             .map_err(|e| e.to_string())?;
 
+        self.event_bus.publish(user.pull_events()).await?;
+
         Ok(user)
     }
 }
@@ -111,6 +118,7 @@ mod tests {
 
     use mockall::predicate;
     use shared::domain::base_errors::BaseRepositoryError;
+    use shared::domain::bus::event::tests::MockEventBus;
     use shared::domain::storage::tests::MockFileStorageRepository;
     use uuid::Uuid;
 
@@ -141,10 +149,14 @@ mod tests {
             .times(1)
             .returning(move |_| Err(BaseRepositoryError::NotFound));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let service = UpdateUser::new(
             Arc::new(user_repository),
             Arc::new(MockUserPasswordHasher::new()),
             Arc::new(MockFileStorageRepository::new()),
+            Arc::new(event_bus),
         );
 
         let result = service
@@ -189,10 +201,14 @@ mod tests {
             .times(1)
             .returning(|_| Err(HashError::InvalidPassword));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let service = UpdateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(MockFileStorageRepository::new()),
+            Arc::new(event_bus),
         );
 
         let result = service
@@ -249,10 +265,14 @@ mod tests {
             .times(1)
             .return_const(Err("Error saving the image".to_string()));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let service = UpdateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storage_repository),
+            Arc::new(event_bus),
         );
 
         let result = service
@@ -315,10 +335,14 @@ mod tests {
             .times(1)
             .returning(|_| Err(BaseRepositoryError::UnexpectedError("DB error".to_string())));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
         let service = UpdateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storage_repository),
+            Arc::new(event_bus),
         );
 
         let result = service
@@ -378,10 +402,14 @@ mod tests {
             .times(1)
             .return_const(Ok("".to_string()));
 
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(1).return_const(Ok(()));
+
         let service = UpdateUser::new(
             Arc::new(user_repository),
             Arc::new(password_hasher),
             Arc::new(storage_repository),
+            Arc::new(event_bus),
         );
 
         let result = service

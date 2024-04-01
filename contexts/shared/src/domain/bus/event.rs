@@ -132,6 +132,18 @@ impl Display for EventError {
     }
 }
 
+impl From<String> for EventError {
+    fn from(message: String) -> Self {
+        Self::new(message)
+    }
+}
+
+impl From<EventError> for String {
+    fn from(error: EventError) -> Self {
+        error.0
+    }
+}
+
 #[async_trait::async_trait]
 pub trait EventHandler: Send + Sync {
     async fn handle(&self, event: Arc<dyn Event>) -> Result<(), EventError>;
@@ -142,4 +154,20 @@ pub trait EventHandler: Send + Sync {
 pub trait EventBus: Send + Sync {
     async fn publish(&self, event: Vec<Arc<dyn Event>>) -> Result<(), EventError>;
     fn register_handler(&mut self, handler: Arc<dyn EventHandler>);
+}
+
+pub mod tests {
+    use mockall::mock;
+
+    use super::*;
+
+    mock! {
+        pub EventBus {}
+
+        #[async_trait::async_trait]
+        impl EventBus for EventBus {
+            async fn publish(&self, event: Vec<Arc<dyn Event>>) -> Result<(), EventError>;
+            fn register_handler(&mut self, handler: Arc<dyn EventHandler>);
+        }
+    }
 }

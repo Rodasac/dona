@@ -35,14 +35,18 @@ use sea_orm::DatabaseConnection;
 use shared::{
     domain::bus::{command::CommandBus, query::QueryBus},
     infrastructure::{
-        bus::{command::InMemoryCommandBus, query::InMemoryQueryBus},
+        bus::{command::InMemoryCommandBus, event::InMemoryEventBus, query::InMemoryQueryBus},
         storage::DiskFileStorageRepository,
     },
 };
 
+// This function is used to register all the dependencies of the backoffice app
+// The event bus must be injected as an Arc because it is shared between the services
+// and the initialization must be done before injecting it into the services
 pub fn backoffice_app_di(
     command_bus: &mut InMemoryCommandBus,
     query_bus: &mut InMemoryQueryBus,
+    event_bus: Arc<InMemoryEventBus>,
     db: &DatabaseConnection,
 ) {
     let user_repository = Arc::new(SeaUserRepository::new(db.clone()));
@@ -53,6 +57,7 @@ pub fn backoffice_app_di(
         user_repository.clone(),
         password_hasher.clone(),
         backoffice_file_storage.clone(),
+        event_bus.clone(),
     );
     let create_user_command_handler = CreateUserCommandHandler::new(create_user);
 
@@ -60,14 +65,18 @@ pub fn backoffice_app_di(
         user_repository.clone(),
         password_hasher.clone(),
         backoffice_file_storage.clone(),
+        event_bus.clone(),
     );
     let update_user_command_handler = UpdateUserCommandHandler::new(update_user);
 
-    let delete_user = UserDeleter::new(user_repository.clone());
+    let delete_user = UserDeleter::new(user_repository.clone(), event_bus.clone());
     let delete_user_command_handler = DeleteUserCommandHandler::new(delete_user);
 
-    let authenticator_service =
-        UserAuthenticator::new(user_repository.clone(), password_hasher.clone());
+    let authenticator_service = UserAuthenticator::new(
+        user_repository.clone(),
+        password_hasher.clone(),
+        event_bus.clone(),
+    );
     let authenticator_command_handler = AuthenticateUserCommandHandler::new(authenticator_service);
 
     command_bus.register_handler(

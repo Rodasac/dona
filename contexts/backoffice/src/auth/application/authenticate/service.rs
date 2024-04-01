@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
-use shared::domain::criteria::{
-    cursor::{Cursor, FirstField},
-    filter::{Filter, FilterField, FilterOperator, FilterValue},
-    Criteria,
+use shared::domain::{
+    bus::event::EventBus,
+    criteria::{
+        cursor::{Cursor, FirstField},
+        filter::{Filter, FilterField, FilterOperator, FilterValue},
+        Criteria,
+    },
 };
 
 use crate::auth::domain::{
@@ -16,16 +19,19 @@ use crate::auth::domain::{
 pub struct UserAuthenticator {
     user_repository: Arc<dyn UserRepository>,
     password_hasher: Arc<dyn UserPasswordHasher>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl UserAuthenticator {
     pub fn new(
         user_repository: Arc<dyn UserRepository>,
         password_hasher: Arc<dyn UserPasswordHasher>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             user_repository,
             password_hasher,
+            event_bus,
         }
     }
 
@@ -59,7 +65,7 @@ impl UserAuthenticator {
     }
 
     pub async fn execute(&self, email: UserEmail, password: UserPassword) -> Result<(), String> {
-        let user = self.find_by_email(email).await?;
+        let mut user = self.find_by_email(email).await?;
 
         self.password_hasher
             .verify(
@@ -68,6 +74,8 @@ impl UserAuthenticator {
             )
             .map_err(|e| e.to_string())?;
 
+        self.event_bus.publish(user.pull_events()).await?;
+
         Ok(())
     }
 }
@@ -75,6 +83,7 @@ impl UserAuthenticator {
 #[cfg(test)]
 mod tests {
     use shared::domain::base_errors::BaseRepositoryError;
+    use shared::domain::bus::event::tests::MockEventBus;
 
     use super::*;
 
@@ -100,8 +109,14 @@ mod tests {
             .times(0)
             .return_const(Ok(()));
 
-        let user_auth =
-            UserAuthenticator::new(Arc::new(user_repository), Arc::new(password_hasher));
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
+        let user_auth = UserAuthenticator::new(
+            Arc::new(user_repository),
+            Arc::new(password_hasher),
+            Arc::new(event_bus),
+        );
         let result = user_auth
             .execute(user_email.clone(), user_password.clone())
             .await;
@@ -127,8 +142,14 @@ mod tests {
             .times(1)
             .return_const(Err(HashError::InvalidPassword));
 
-        let user_auth =
-            UserAuthenticator::new(Arc::new(user_repository), Arc::new(password_hasher));
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(0);
+
+        let user_auth = UserAuthenticator::new(
+            Arc::new(user_repository),
+            Arc::new(password_hasher),
+            Arc::new(event_bus),
+        );
         let result = user_auth
             .execute(
                 UserEmail::new(user.email().to_owned()).unwrap(),
@@ -156,8 +177,14 @@ mod tests {
             .times(1)
             .return_const(Ok(()));
 
-        let user_auth =
-            UserAuthenticator::new(Arc::new(user_repository), Arc::new(password_hasher));
+        let mut event_bus = MockEventBus::new();
+        event_bus.expect_publish().times(1).return_const(Ok(()));
+
+        let user_auth = UserAuthenticator::new(
+            Arc::new(user_repository),
+            Arc::new(password_hasher),
+            Arc::new(event_bus),
+        );
         let response = user_auth
             .execute(
                 UserEmail::new(user.email().to_owned()).unwrap(),
