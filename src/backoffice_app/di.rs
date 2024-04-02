@@ -40,9 +40,10 @@ use shared::{
     },
 };
 
-// This function is used to register all the dependencies of the backoffice app
-// The event bus must be injected as an Arc because it is shared between the services
-// and the initialization must be done before injecting it into the services
+/// This function is used to register all the dependencies of the backoffice app.
+///
+/// The event bus must be injected as an Arc because it is shared between the services
+/// and the initialization must be done before injecting it into the services
 pub fn backoffice_app_di(
     command_bus: &mut InMemoryCommandBus,
     query_bus: &mut InMemoryQueryBus,

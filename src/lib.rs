@@ -3,6 +3,7 @@ use std::sync::Arc;
 use shared::domain::bus::{command::CommandBus, query::QueryBus};
 
 pub mod backoffice_app;
+pub mod dona;
 pub mod gql_validators;
 pub mod graphql;
 pub mod security;

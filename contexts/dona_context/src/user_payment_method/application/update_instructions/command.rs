@@ -217,7 +217,7 @@ mod tests {
             id: method.id().to_string(),
             user_id: method.user_id().to_string(),
             instructions: "instructions".to_string(),
-            updated_at: updated_at,
+            updated_at,
         };
 
         let result = handler.handle(Box::new(command)).await;

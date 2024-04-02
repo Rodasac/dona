@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::backoffice_app::di::backoffice_app_di;
+use crate::dona::di::dona_app_di;
 use crate::graphql::{DonaSchema, Mutation, Query};
 use crate::security::di::security_app_di;
 use crate::{CommandBusType, QueryBusType};
@@ -52,6 +53,7 @@ async fn index(
 
     backoffice_app_di(&mut command_bus, &mut query_bus, event_bus.clone(), &db);
     security_app_di(&mut command_bus, &redis);
+    dona_app_di(&mut command_bus, &mut query_bus, event_bus, &db);
 
     let command_bus: CommandBusType = Arc::new(command_bus);
     let query_bus: QueryBusType = Arc::new(query_bus);

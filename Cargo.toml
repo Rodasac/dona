@@ -65,6 +65,7 @@ tokio.workspace = true
 shared = { path = "contexts/shared" }
 backoffice = { path = "contexts/backoffice" }
 security = { path = "contexts/security" }
+dona_context = { path = "contexts/dona_context" }
 
 [dev-dependencies]
 sea-orm = { version = "*", features = ["with-rust_decimal", "with-time", "with-uuid", "debug-print", "runtime-tokio-rustls", "sqlx-postgres"] }
